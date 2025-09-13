@@ -42,34 +42,34 @@ const App = () => (
               <Routes>
                 <Route element={<Layout />}>
                   <Route path="/" element={<Index />} />
-                <Route element={<PrivateRoute />}>
-                  <Route path="/marketplace" element={<Marketplace />} />
-                  <Route path="/shop" element={<Shop />} />
-                  <Route path="/rotcoins" element={<Shop />} />
-                  <Route path="/quests" element={<Quests />} />
-                  <Route path="/quetes" element={<Quests />} />
-                  <Route path="/gift-card" element={<GiftCard />} />
+                  <Route element={<PrivateRoute />}>
+                    <Route path="/marketplace" element={<Marketplace />} />
+                    <Route path="/shop" element={<Shop />} />
+                    <Route path="/rotcoins" element={<Shop />} />
+                    <Route path="/quests" element={<Quests />} />
+                    <Route path="/quetes" element={<Quests />} />
+                    <Route path="/gift-card" element={<GiftCard />} />
+                  </Route>
+                  <Route path="/profile" element={<Profile />} />
+                  <Route element={<PrivateRoute />}>
+                    <Route path="/transactions" element={<Transactions />} />
+                    <Route
+                      path="/tickets"
+                      element={<Placeholder title="Tickets support" />}
+                    />
+                    <Route path="/messages" element={<Messages />} />
+                  </Route>
+                  <Route path="/admin" element={<PrivateRoute />}>
+                    <Route index element={<AdminPanel />} />
+                  </Route>
+                  <Route path="/admin-roles" element={<PrivateRoute />}>
+                    <Route index element={<AdminRoles />} />
+                  </Route>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/auth/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="*" element={<NotFound />} />
                 </Route>
-                <Route path="/profile" element={<Profile />} />
-                <Route element={<PrivateRoute />}>
-                  <Route path="/transactions" element={<Transactions />} />
-                  <Route
-                    path="/tickets"
-                    element={<Placeholder title="Tickets support" />}
-                  />
-                  <Route path="/messages" element={<Messages />} />
-                </Route>
-                <Route path="/admin" element={<PrivateRoute />}>
-                  <Route index element={<AdminPanel />} />
-                </Route>
-                <Route path="/admin-roles" element={<PrivateRoute />}>
-                  <Route index element={<AdminRoles />} />
-                </Route>
-                <Route path="/login" element={<Login />} />
-                <Route path="/auth/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
               </Routes>
             </BrowserRouter>
           </ProfileProvider>

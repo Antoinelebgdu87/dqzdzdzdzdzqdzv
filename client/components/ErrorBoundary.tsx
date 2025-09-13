@@ -22,7 +22,8 @@ export class ErrorBoundary extends React.Component<
           <div className="max-w-md">
             <h1 className="text-xl font-bold">Une erreur est survenue</h1>
             <p className="mt-2 text-sm opacity-80">
-              Veuillez recharger la page. Si le problème persiste, contactez le support.
+              Veuillez recharger la page. Si le problème persiste, contactez le
+              support.
             </p>
             <button
               onClick={() => window.location.reload()}

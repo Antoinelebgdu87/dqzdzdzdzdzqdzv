@@ -51,7 +51,9 @@ export default function Shop() {
     return percent;
   })();
 
-  const payhipProductUrl = (import.meta as any).env?.VITE_PAYHIP_PRODUCT_URL || "https://payhip.com/b/lI6ti";
+  const payhipProductUrl =
+    (import.meta as any).env?.VITE_PAYHIP_PRODUCT_URL ||
+    "https://payhip.com/b/lI6ti";
   const onBuy = (id: string) => {
     const pack = packs.find((p) => p.id === id)!;
     if (!user) {
@@ -75,7 +77,8 @@ export default function Shop() {
             Boutique RotCoins
           </h1>
           <p className="text-sm text-foreground/70">
-            Achetez des crédits (Payhip). Le montant est libre; les crédits sont ajoutés instantanément après paiement.
+            Achetez des crédits (Payhip). Le montant est libre; les crédits sont
+            ajoutés instantanément après paiement.
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs text-foreground/70">
@@ -154,7 +157,8 @@ export default function Shop() {
             </div>
             {open === p.id && (
               <div className="mt-4 text-sm text-foreground/70">
-                Le paiement s'ouvre dans un nouvel onglet (Payhip). Une fois validé, vos crédits seront ajoutés automatiquement.
+                Le paiement s'ouvre dans un nouvel onglet (Payhip). Une fois
+                validé, vos crédits seront ajoutés automatiquement.
               </div>
             )}
             <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5" />

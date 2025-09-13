@@ -63,7 +63,8 @@ function isAuthorized(req: any): boolean {
 
 export const payhipWebhookExpress: RequestHandler = async (req, res) => {
   try {
-    if (!isAuthorized(req)) return res.status(401).json({ error: "unauthorized" });
+    if (!isAuthorized(req))
+      return res.status(401).json({ error: "unauthorized" });
 
     const payload = req.body || {};
     const event = String(payload.event || payload.type || "");
@@ -126,4 +127,4 @@ export const payhipWebhookExpress: RequestHandler = async (req, res) => {
     console.error("payhip:webhook", e?.message || e);
     res.status(500).json({ error: "server_error" });
   }
-}
+};

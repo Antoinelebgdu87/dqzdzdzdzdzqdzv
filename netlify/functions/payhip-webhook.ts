@@ -58,10 +58,17 @@ function extractEmail(payload: any): string | null {
   return candidates.length ? String(candidates[0]).toLowerCase() : null;
 }
 
-function isAuthorized(headers: Record<string, string | undefined>, body: any, query: URLSearchParams): boolean {
+function isAuthorized(
+  headers: Record<string, string | undefined>,
+  body: any,
+  query: URLSearchParams,
+): boolean {
   const secret = process.env.PAYHIP_WEBHOOK_SECRET || process.env.PAYHIP_SECRET;
   if (!secret) return false;
-  const hdr = headers["x-payhip-secret"] || headers["x-payhip-webhook-secret"] || headers["x-webhook-secret"];
+  const hdr =
+    headers["x-payhip-secret"] ||
+    headers["x-payhip-webhook-secret"] ||
+    headers["x-webhook-secret"];
   if (hdr && String(hdr) === secret) return true;
   if (String(query.get("secret") || "") === secret) return true;
   if (body && String((body as any).secret || "") === secret) return true;
@@ -74,12 +81,15 @@ export const handler: Handler = async (event) => {
   try {
     const body = event.body ? JSON.parse(event.body) : {};
     const headers = Object.fromEntries(
-      Object.entries(event.headers || {}).map(([k, v]) => [k.toLowerCase(), v])
+      Object.entries(event.headers || {}).map(([k, v]) => [k.toLowerCase(), v]),
     );
     const query = new URLSearchParams(event.rawQuery || "");
 
     if (!isAuthorized(headers as any, body, query))
-      return { statusCode: 401, body: JSON.stringify({ error: "unauthorized" }) };
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: "unauthorized" }),
+      };
 
     const eventName = String(body.event || body.type || "");
     const okEvents = [
@@ -89,7 +99,10 @@ export const handler: Handler = async (event) => {
       "purchase.completed",
     ];
     if (!okEvents.includes(eventName))
-      return { statusCode: 200, body: JSON.stringify({ ok: true, skipped: true }) };
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ ok: true, skipped: true }),
+      };
 
     const amountEUR = extractAmountEUR(body);
     let uid = extractUid(body);
@@ -106,11 +119,17 @@ export const handler: Handler = async (event) => {
       }
     }
     if (!uid || !amountEUR)
-      return { statusCode: 200, body: JSON.stringify({ ok: true, missing: true }) };
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ ok: true, missing: true }),
+      };
 
     const credits = computeCredits(amountEUR);
     if (credits <= 0)
-      return { statusCode: 200, body: JSON.stringify({ ok: true, zero: true }) };
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ ok: true, zero: true }),
+      };
 
     const db = getDb();
     const { FieldValue } = await import("firebase-admin/firestore");
@@ -132,7 +151,10 @@ export const handler: Handler = async (event) => {
     });
     await batch.commit();
 
-    return { statusCode: 200, body: JSON.stringify({ ok: true, credited: credits }) };
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ ok: true, credited: credits }),
+    };
   } catch (e: any) {
     console.error("payhip-webhook", e?.message || e);
     return { statusCode: 500, body: JSON.stringify({ error: "server_error" }) };

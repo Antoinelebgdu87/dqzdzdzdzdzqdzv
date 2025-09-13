@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthProvider";
 import { useProfile } from "@/context/ProfileProvider";
-import PayPalCheckout from "@/components/PayPalCheckout";
+// Payhip checkout via external product URL
 import { ShieldCheck, Zap, BadgeDollarSign } from "lucide-react";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
@@ -51,6 +51,7 @@ export default function Shop() {
     return percent;
   })();
 
+  const payhipProductUrl = (import.meta as any).env?.VITE_PAYHIP_PRODUCT_URL || "https://payhip.com/b/lI6ti";
   const onBuy = (id: string) => {
     const pack = packs.find((p) => p.id === id)!;
     if (!user) {
@@ -60,7 +61,10 @@ export default function Shop() {
       });
       return;
     }
-    setOpen(id);
+    // Open Payhip product (pay-what-you-want). We pass ref=uid for reconciliation.
+    const url = new URL(payhipProductUrl);
+    url.searchParams.set("ref", user.uid);
+    window.open(url.toString(), "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -71,7 +75,7 @@ export default function Shop() {
             Boutique RotCoins
           </h1>
           <p className="text-sm text-foreground/70">
-            Achetez des crédits instantanément. Paiements sécurisés via PayPal.
+            Achetez des crédits (Payhip). Le montant est libre; les crédits sont ajoutés instantanément après paiement.
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs text-foreground/70">
@@ -149,56 +153,8 @@ export default function Shop() {
               </Button>
             </div>
             {open === p.id && (
-              <div className="mt-4">
-                {processing ? (
-                  <div className="flex items-center gap-2 text-sm text-foreground/80">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-primary" />
-                    Traitement du paiement���
-                  </div>
-                ) : done ? (
-                  <div className="text-sm text-emerald-400 font-semibold">
-                    Crédits ajoutés ✔
-                  </div>
-                ) : (
-                  <div>
-                    {activePromo > 0 && (
-                      <div className="mb-2 text-xs text-foreground/70">
-                        Promo: -{activePromo}%
-                      </div>
-                    )}
-                    <PayPalCheckout
-                      amount={(p.price * (1 - activePromo / 100)).toFixed(2)}
-                      onSuccess={async (orderId) => {
-                        try {
-                          setProcessing(true);
-                          // Record transaction placeholder; credits will be added via webhook
-                          await addDoc(collection(db, "transactions"), {
-                            uid: user?.uid,
-                            email: user?.email,
-                            type: "credits_purchase",
-                            orderId,
-                            amountEUR: p.price,
-                            createdAt: serverTimestamp(),
-                          });
-                          setDone(true);
-                          toast({
-                            title: "Paiement PayPal confirmé",
-                            description:
-                              "Vos crédits seront crédités après confirmation (quelques secondes).",
-                          });
-                        } finally {
-                          setProcessing(false);
-                          setTimeout(() => {
-                            setOpen(null);
-                            setDone(false);
-                          }, 1200);
-                        }
-                      }}
-                      currency="EUR"
-                      userId={user?.uid || ""}
-                    />
-                  </div>
-                )}
+              <div className="mt-4 text-sm text-foreground/70">
+                Le paiement s'ouvre dans un nouvel onglet (Payhip). Une fois validé, vos crédits seront ajoutés automatiquement.
               </div>
             )}
             <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5" />

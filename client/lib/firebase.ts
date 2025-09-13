@@ -1,4 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp, getApps, getApp } from "firebase/app";
 import {
   getAuth,
   setPersistence,
@@ -17,6 +18,7 @@ const firebaseConfig = {
   measurementId: "G-N1P4V34PE5",
 };
 
+// initialize or reuse existing app
 export const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
 // Initialize Firestore only on the client. Initializing Firestore on the server
@@ -37,13 +39,25 @@ if (typeof window !== "undefined") {
   setPersistence(auth, browserLocalPersistence).catch(() => {});
 }
 
+// Initialize Analytics only when running in a real browser and not on localhost
 export async function initAnalytics() {
   if (typeof window === "undefined") return null;
+  // Avoid initializing analytics on localhost or during SSR/dev middleware where network may be restricted
   try {
+    const host = window.location.hostname;
+    if (host === "localhost" || host === "127.0.0.1") return null;
+    if (!firebaseConfig.measurementId) return null;
     if (await isSupported()) {
-      return getAnalytics(app);
+      try {
+        return getAnalytics(app);
+      } catch (err) {
+        // swallow analytics errors (network blocked or misconfigured measurement id)
+        // eslint-disable-next-line no-console
+        console.warn("Analytics not available:", err?.message || err);
+        return null;
+      }
     }
-  } catch {
+  } catch (e) {
     // no-op
   }
   return null;

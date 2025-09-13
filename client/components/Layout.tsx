@@ -110,6 +110,7 @@ function Header() {
 
 function MobileMenu() {
   const { user, logout } = useAuth();
+  const { role } = useProfile();
   return (
     <Sheet>
       <SheetTrigger asChild>

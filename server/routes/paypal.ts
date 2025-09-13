@@ -6,7 +6,7 @@ const PAYPAL_API = "https://api-m.paypal.com";
 async function verifyWebhook(headers: any, body: any) {
   const clientId =
     process.env.VITE_PAYPAL_CLIENT_ID || process.env.PAYPAL_CLIENT_ID;
-  const secret = process.env.PAYPAL_CLIENT_SECRET;
+  const secret = process.env.PAYPAL_CLIENT_SECRET || process.env.PAYPAL_SECRET;
   const webhookId = process.env.PAYPAL_WEBHOOK_ID;
   if (!clientId || !secret || !webhookId) return false;
 
@@ -48,11 +48,10 @@ export const paypalWebhook: RequestHandler = async (req, res) => {
     const paymentId = resource.id;
     const amount = Number(resource.amount?.value || 0);
     const currency = resource.amount?.currency_code || "EUR";
-    const customId =
-      resource.supplementary_data?.related_ids?.order_id ||
-      resource.custom_id ||
-      null;
-    const uid = event?.resource?.payer?.payer_id || null;
+    const purchaseUnit = Array.isArray(resource.purchase_units)
+      ? resource.purchase_units[0]
+      : undefined;
+    const uid = purchaseUnit?.custom_id || null;
 
     const db = await getAdminDb();
     // Dynamically import FieldValue to avoid requiring firebase-admin at dev startup
@@ -79,6 +78,15 @@ export const paypalWebhook: RequestHandler = async (req, res) => {
         { "balances.available": FieldValue.increment(amount) },
         { merge: true },
       );
+      // Optional: record transaction
+      batch.set(db.collection("transactions").doc(), {
+        uid,
+        type: "credits_purchase",
+        orderId: paymentId,
+        amountEUR: amount,
+        status: "completed",
+        createdAt: FieldValue.serverTimestamp(),
+      });
     }
 
     await batch.commit();

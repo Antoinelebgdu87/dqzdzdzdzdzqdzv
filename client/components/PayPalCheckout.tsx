@@ -10,10 +10,12 @@ export default function PayPalCheckout({
   amount,
   currency = "EUR",
   onSuccess,
+  userId,
 }: {
   amount: string;
   currency?: string;
   onSuccess: (orderId: string) => void;
+  userId: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
@@ -115,7 +117,12 @@ export default function PayPalCheckout({
               (import.meta.env.VITE_PAYPAL_APP_NAME as string) ||
               "BrainrotMarket",
           },
-          purchase_units: [{ amount: { value: amount } }],
+          purchase_units: [
+            {
+              amount: { value: amount },
+              custom_id: userId || undefined,
+            },
+          ],
         }),
       onApprove: async (_: any, actions: any) => {
         try {

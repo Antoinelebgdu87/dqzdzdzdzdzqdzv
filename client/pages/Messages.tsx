@@ -86,7 +86,7 @@ export default function Messages() {
           )}
         </div>
       </div>
-      <div className="rounded-xl border border-border/60 bg-card p-3 min-h-[50vh]">
+      <div className="rounded-xl border border-border/60 bg-card p-3 h-[70vh]">
         {active ? (
           <Thread id={active} />
         ) : (

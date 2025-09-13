@@ -45,7 +45,9 @@ export async function createServer() {
   }
 
   try {
-    const { processPendingSales, runProcessPendingSales } = await import("./routes/pending");
+    const { processPendingSales, runProcessPendingSales } = await import(
+      "./routes/pending"
+    );
     app.post("/api/process-pending", processPendingSales);
 
     // Schedule a periodic background runner on the server to ensure pending sales are

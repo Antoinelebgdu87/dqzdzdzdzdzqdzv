@@ -193,7 +193,7 @@ export function ProductDetailContent({
         createdAt: serverTimestamp(),
       });
 
-      // Create seller pending transaction
+      // Create seller pending transaction and increment pending balance
       await addDoc(collection(db, "transactions"), {
         uid: sellerId ?? null,
         type: "salePending",
@@ -203,6 +203,11 @@ export function ProductDetailContent({
         buyerId: user.uid,
         createdAt: serverTimestamp(),
       });
+      if (sellerId) {
+        await updateDoc(doc(db, "users", sellerId), {
+          "balances.pending": increment(price),
+        } as any);
+      }
 
       // remove product for everyone (delete main doc and user mirror)
       try {

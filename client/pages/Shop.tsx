@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthProvider";
 import { useProfile } from "@/context/ProfileProvider";
-import StripeCheckout from "@/components/StripeCheckout";
+import PayPalCheckout from "@/components/PayPalCheckout";
 import { ShieldCheck, Zap, BadgeDollarSign } from "lucide-react";
 import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
@@ -71,7 +71,7 @@ export default function Shop() {
             Boutique RotCoins
           </h1>
           <p className="text-sm text-foreground/70">
-            Achetez des crédits instantanément. Paiements sécurisés via Stripe.
+            Achetez des crédits instantanément. Paiements sécurisés via PayPal.
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs text-foreground/70">
@@ -153,7 +153,7 @@ export default function Shop() {
                 {processing ? (
                   <div className="flex items-center gap-2 text-sm text-foreground/80">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-primary" />
-                    Traitement du paiement…
+                    Traitement du paiement���
                   </div>
                 ) : done ? (
                   <div className="text-sm text-emerald-400 font-semibold">
@@ -166,28 +166,25 @@ export default function Shop() {
                         Promo: -{activePromo}%
                       </div>
                     )}
-                    <StripeCheckout
+                    <PayPalCheckout
                       amount={(p.price * (1 - activePromo / 100)).toFixed(2)}
-                      onSuccess={async (paymentId) => {
+                      onSuccess={async (orderId) => {
                         try {
                           setProcessing(true);
-                          const credits =
-                            p.coins + Math.round((p.coins * p.bonus) / 100);
-                          await addCredits(credits);
-                          // Write transaction
+                          // Record transaction placeholder; credits will be added via webhook
                           await addDoc(collection(db, "transactions"), {
                             uid: user?.uid,
                             email: user?.email,
                             type: "credits_purchase",
-                            orderId: paymentId,
+                            orderId,
                             amountEUR: p.price,
-                            credits,
                             createdAt: serverTimestamp(),
                           });
                           setDone(true);
                           toast({
-                            title: "Paiement réussi",
-                            description: `Vous avez reçu ${credits.toLocaleString()} RC`,
+                            title: "Paiement PayPal confirmé",
+                            description:
+                              "Vos crédits seront crédités après confirmation (quelques secondes).",
                           });
                         } finally {
                           setProcessing(false);
@@ -197,6 +194,8 @@ export default function Shop() {
                           }, 1200);
                         }
                       }}
+                      currency="EUR"
+                      userId={user?.uid || ""}
                     />
                   </div>
                 )}

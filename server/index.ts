@@ -45,8 +45,14 @@ export async function createServer() {
   }
 
   try {
-    const { processPendingSales } = await import("./routes/pending");
+    const { processPendingSales, runPendingSalesProcessing } = await import(
+      "./routes/pending"
+    );
     app.post("/api/process-pending", processPendingSales);
+    // Background processor (best-effort)
+    setInterval(() => {
+      runPendingSalesProcessing().catch(() => {});
+    }, 30_000);
   } catch (e) {
     console.warn("Could not load pending processor:", e?.message || e);
   }

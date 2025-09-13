@@ -168,24 +168,6 @@ function MobileMenu() {
                 Profil
               </Link>
               <Link
-                to="/transactions"
-                className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
-              >
-                Transactions
-              </Link>
-              <Link
-                to="/quests"
-                className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
-              >
-                Quêtes
-              </Link>
-              <Link
-                to="/tickets"
-                className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
-              >
-                Tickets
-              </Link>
-              <Link
                 to="/messages"
                 className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted inline-flex items-center justify-between"
               >

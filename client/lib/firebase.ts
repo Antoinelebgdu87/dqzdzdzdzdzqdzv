@@ -39,6 +39,9 @@ if (typeof window !== "undefined") {
 
 export async function initAnalytics() {
   if (typeof window === "undefined") return null;
+  // Opt-in only: avoid noisy network errors in restricted environments
+  const enabled = (import.meta as any).env?.VITE_ENABLE_ANALYTICS === "true";
+  if (!enabled) return null;
   try {
     if (await isSupported()) {
       return getAnalytics(app);

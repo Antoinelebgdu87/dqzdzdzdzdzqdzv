@@ -51,18 +51,25 @@ export async function createServer() {
     app.post("/api/process-pending", processPendingSales);
 
     // Schedule a periodic background runner on the server to ensure pending sales are
-    // redistributed even if the client-side trigger doesn't fire. Runs every 60s.
-    try {
-      const intervalMs = 60 * 1000;
-      setInterval(() => {
-        runProcessPendingSales().catch((err) => {
-          // eslint-disable-next-line no-console
-          console.error("runProcessPendingSales interval error", err);
-        });
-      }, intervalMs);
-    } catch (err) {
+    // redistributed even if the client-side trigger doesn't fire. Only schedule when
+    // admin credentials are available in the environment to avoid noisy errors in dev.
+    const hasAdminCreds = Boolean(process.env.FIREBASE_SERVICE_ACCOUNT || process.env.GOOGLE_APPLICATION_CREDENTIALS);
+    if (hasAdminCreds) {
+      try {
+        const intervalMs = 60 * 1000;
+        setInterval(() => {
+          runProcessPendingSales().catch((err) => {
+            // eslint-disable-next-line no-console
+            console.error("runProcessPendingSales interval error", err);
+          });
+        }, intervalMs);
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn("Failed to schedule pending processor:", err);
+      }
+    } else {
       // eslint-disable-next-line no-console
-      console.warn("Failed to schedule pending processor:", err);
+      console.info("Pending processor not scheduled: missing FIREBASE_SERVICE_ACCOUNT / GOOGLE_APPLICATION_CREDENTIALS");
     }
   } catch (e) {
     console.warn("Could not load pending processor:", e?.message || e);

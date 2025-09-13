@@ -1,5 +1,12 @@
 export const packs = [
-  { id: "starter", name: "Starter", coins: 25, price: 1.99, bonus: 0 },
+  {
+    id: "starter",
+    name: "Starter",
+    coins: 25,
+    price: 1.99,
+    bonus: 0,
+    payhipUrl: "https://payhip.com/b/lI6ti",
+  },
   {
     id: "gamer",
     name: "Gamer",
@@ -7,8 +14,31 @@ export const packs = [
     price: 4.99,
     bonus: 1,
     popular: true,
+    payhipUrl: "https://payhip.com/b/HIQqr",
   },
-  { id: "elite", name: "Elite", coins: 200, price: 9.99, bonus: 3 },
-  { id: "pro", name: "Pro", coins: 500, price: 19.99, bonus: 6, best: true },
-  { id: "legend", name: "Legend", coins: 1000, price: 34.99, bonus: 10 },
+  {
+    id: "elite",
+    name: "Elite",
+    coins: 200,
+    price: 9.99,
+    bonus: 3,
+    payhipUrl: "https://payhip.com/b/SFihg",
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    coins: 500,
+    price: 19.99,
+    bonus: 6,
+    best: true,
+    payhipUrl: "https://payhip.com/b/KwS4N",
+  },
+  {
+    id: "legend",
+    name: "Legend",
+    coins: 1000,
+    price: 34.99,
+    bonus: 10,
+    payhipUrl: "https://payhip.com/b/ruMHK",
+  },
 ];

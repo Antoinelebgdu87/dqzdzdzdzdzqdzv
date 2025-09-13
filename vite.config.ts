@@ -19,8 +19,13 @@ export default defineConfig(({ mode }) => ({
     // We detect common preview host patterns and set HMR accordingly to avoid
     // "Invalid frame header" websocket errors when the proxy expects wss.
     try {
-      const previewHost = process.env.VITE_PREVIEW_HOST || process.env.HOSTNAME || "";
-      if (previewHost.includes("fly.dev") || previewHost.includes("netlify.app") || previewHost.includes("vercel.app")) {
+      const previewHost =
+        process.env.VITE_PREVIEW_HOST || process.env.HOSTNAME || "";
+      if (
+        previewHost.includes("fly.dev") ||
+        previewHost.includes("netlify.app") ||
+        previewHost.includes("vercel.app")
+      ) {
         cfg.hmr = {
           protocol: "wss",
           clientPort: 443,

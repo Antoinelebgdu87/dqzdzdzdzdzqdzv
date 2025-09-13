@@ -45,6 +45,18 @@ function extractAmountEUR(payload: any): number {
     .filter((n: number) => Number.isFinite(n) && n > 0);
   return candidates.length ? candidates[0] : 0;
 }
+function extractEmail(payload: any): string | null {
+  const p = payload || {};
+  const candidates = [
+    p.email,
+    p.customer_email,
+    p.buyer_email,
+    p.payer_email,
+    p.data?.order?.customer?.email,
+    p.customer?.email,
+  ].filter(Boolean);
+  return candidates.length ? String(candidates[0]).toLowerCase() : null;
+}
 
 function isAuthorized(headers: Record<string, string | undefined>, body: any, query: URLSearchParams): boolean {
   const secret = process.env.PAYHIP_WEBHOOK_SECRET || process.env.PAYHIP_SECRET;
@@ -80,7 +92,19 @@ export const handler: Handler = async (event) => {
       return { statusCode: 200, body: JSON.stringify({ ok: true, skipped: true }) };
 
     const amountEUR = extractAmountEUR(body);
-    const uid = extractUid(body);
+    let uid = extractUid(body);
+    if (!uid) {
+      const email = extractEmail(body);
+      if (email) {
+        const db = getDb();
+        const snap = await db
+          .collection("users")
+          .where("email", "==", email)
+          .limit(1)
+          .get();
+        if (!snap.empty) uid = snap.docs[0].id;
+      }
+    }
     if (!uid || !amountEUR)
       return { statusCode: 200, body: JSON.stringify({ ok: true, missing: true }) };
 

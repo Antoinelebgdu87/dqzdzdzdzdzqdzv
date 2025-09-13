@@ -105,7 +105,7 @@ export default function Transactions() {
           <div>Détails</div>
           <div>Montant</div>
         </div>
-        <div>
+        <div className="h-[60vh] overflow-auto">
           {rows.length === 0 ? (
             <div className="p-4 text-sm text-foreground/70">
               Aucune transaction.

@@ -60,6 +60,14 @@ export default function Shop() {
       });
       return;
     }
+    // If pack has a Payhip URL, open it with buyer UID attached
+    if (pack.payhipUrl) {
+      const url = new URL(pack.payhipUrl);
+      url.searchParams.set("buyer", user.uid);
+      // Open in new tab
+      window.open(url.toString(), "_blank");
+      return;
+    }
     setOpen(id);
   };
 

@@ -45,8 +45,23 @@ export async function createServer() {
   }
 
   try {
-    const { processPendingSales } = await import("./routes/pending");
+    const { processPendingSales, runProcessPendingSales } = await import("./routes/pending");
     app.post("/api/process-pending", processPendingSales);
+
+    // Schedule a periodic background runner on the server to ensure pending sales are
+    // redistributed even if the client-side trigger doesn't fire. Runs every 60s.
+    try {
+      const intervalMs = 60 * 1000;
+      setInterval(() => {
+        runProcessPendingSales().catch((err) => {
+          // eslint-disable-next-line no-console
+          console.error("runProcessPendingSales interval error", err);
+        });
+      }, intervalMs);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("Failed to schedule pending processor:", err);
+    }
   } catch (e) {
     console.warn("Could not load pending processor:", e?.message || e);
   }

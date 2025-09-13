@@ -28,6 +28,12 @@ export async function createServer() {
     // eslint-disable-next-line no-console
     console.warn("Could not load paypal webhook route:", e?.message || e);
   }
+  try {
+    const { payhipWebhookExpress } = await import("./routes/payhip");
+    app.post("/api/webhooks/payhip", payhipWebhookExpress);
+  } catch (e) {
+    console.warn("Could not load payhip webhook route:", e?.message || e);
+  }
 
   try {
     const { createPaymentIntent } = await import("./routes/stripe");

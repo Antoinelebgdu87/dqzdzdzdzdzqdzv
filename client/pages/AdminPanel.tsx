@@ -1528,6 +1528,10 @@ export default function AdminPanel() {
               </div>
             </div>
             <div>
+              <div className="text-sm font-semibold">Packs RotCoins</div>
+              <AdminPacks />
+            </div>
+            <div>
               <div className="text-sm font-semibold">
                 Promotions RotCoins (%)
               </div>

@@ -126,7 +126,7 @@ function MobileMenu() {
         <SheetTitle className="sr-only">Menu</SheetTitle>
         <div className="text-sm font-semibold">Menu</div>
         <div className="mt-3 grid gap-2">
-          {nav.map(({ to, label }) => (
+          {(user ? nav.filter((n) => !["/quests", "/tickets", "/transactions"].includes(n.to)) : nav).map(({ to, label }) => (
             <Link
               key={to}
               to={to}

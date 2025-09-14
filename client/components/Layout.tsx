@@ -675,6 +675,7 @@ export default function Layout() {
       <CreditNotifier />
       <main className="relative z-10">
         <TosModal />
+        <OnboardingTutorial />
         <Outlet />
       </main>
       <Footer />

@@ -288,7 +288,7 @@ export default function Index() {
           <WhyItem
             icon={ShieldCheck}
             title="Safe Payments"
-            desc="Protection acheteur & vendeur via Stripe"
+            desc="Protection acheteur & vendeur via Payhip"
           />
           <WhyItem
             icon={Zap}

@@ -118,7 +118,7 @@ export default function Shop() {
       </header>
 
       <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {(packs.length ? packs : (await import("@/lib/packs")).packs).map((p: any) => (
+        {displayPacks.map((p: any) => (
           <div
             key={p.id}
             className="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-[0_10px_30px_rgba(0,0,0,0.25)] transform transition-transform duration-300 hover:scale-[1.03] hover:-translate-y-1 hover:shadow-2xl"

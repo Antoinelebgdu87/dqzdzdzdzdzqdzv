@@ -14,16 +14,18 @@ export default function Shop() {
   const { role } = useProfile();
   const [promo, setPromo] = useState<number>(0);
   const [promoCfg, setPromoCfg] = useState<any>(null);
-  const [packs, setPacks] = useState<{
-    id: string;
-    name: string;
-    coins: number;
-    price: number;
-    bonus: number;
-    popular?: boolean;
-    best?: boolean;
-    promoPercent?: number;
-  }[]>([]);
+  const [packs, setPacks] = useState<
+    {
+      id: string;
+      name: string;
+      coins: number;
+      price: number;
+      bonus: number;
+      popular?: boolean;
+      best?: boolean;
+      promoPercent?: number;
+    }[]
+  >([]);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "promotions", "packs"), (d) => {
@@ -69,8 +71,13 @@ export default function Shop() {
     return percent;
   }, [promoCfg, promo, role]);
 
-  const payhipUrl = import.meta.env.VITE_PAYHIP_PRODUCT_URL as string | undefined;
-  const displayPacks = useMemo(() => (packs.length ? packs : defaultPacks), [packs]);
+  const payhipUrl = import.meta.env.VITE_PAYHIP_PRODUCT_URL as
+    | string
+    | undefined;
+  const displayPacks = useMemo(
+    () => (packs.length ? packs : defaultPacks),
+    [packs],
+  );
 
   const onBuy = (id: string) => {
     const pack = packs.find((p) => p.id === id)!;
@@ -82,7 +89,10 @@ export default function Shop() {
       return;
     }
     if (!payhipUrl) {
-      toast({ title: "Configuration Payhip manquante", description: "VITE_PAYHIP_PRODUCT_URL n'est pas défini." });
+      toast({
+        title: "Configuration Payhip manquante",
+        description: "VITE_PAYHIP_PRODUCT_URL n'est pas défini.",
+      });
       return;
     }
     const perPackPromo = Number(pack.promoPercent || 0);
@@ -155,8 +165,11 @@ export default function Shop() {
               <div className="text-foreground/80">
                 {(() => {
                   const perPackPromo = Number(p.promoPercent || 0);
-                  const finalPromo = Math.max(0, (activePromo || 0) + perPackPromo);
-                  const discounted = (p.price * (1 - finalPromo / 100));
+                  const finalPromo = Math.max(
+                    0,
+                    (activePromo || 0) + perPackPromo,
+                  );
+                  const discounted = p.price * (1 - finalPromo / 100);
                   if (finalPromo > 0) {
                     return (
                       <div className="flex items-center gap-2">
@@ -170,15 +183,13 @@ export default function Shop() {
                     );
                   }
                   return (
-                    <span className="text-xl font-extrabold">{p.price.toFixed(2)}€</span>
+                    <span className="text-xl font-extrabold">
+                      {p.price.toFixed(2)}€
+                    </span>
                   );
                 })()}
               </div>
-              <Button
-                size="sm"
-                onClick={() => onBuy(p.id)}
-                variant="secondary"
-              >
+              <Button size="sm" onClick={() => onBuy(p.id)} variant="secondary">
                 Acheter
               </Button>
             </div>

@@ -74,16 +74,27 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    const sig = (event.headers["x-payhip-signature"] || event.headers["X-Payhip-Signature"]) as string | undefined;
-    if (!sig) return { statusCode: 400, body: JSON.stringify({ error: "missing_signature" }) };
+    const sig = (event.headers["x-payhip-signature"] ||
+      event.headers["X-Payhip-Signature"]) as string | undefined;
+    if (!sig)
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "missing_signature" }),
+      };
 
     const rawBody = event.isBase64Encoded
       ? Buffer.from(event.body || "", "base64").toString("utf8")
       : String(event.body || "");
 
-    const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+    const expected = crypto
+      .createHmac("sha256", secret)
+      .update(rawBody)
+      .digest("hex");
     if (!timingSafeEqual(expected, sig)) {
-      return { statusCode: 400, body: JSON.stringify({ error: "invalid_signature" }) };
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "invalid_signature" }),
+      };
     }
 
     const payload = parseBody(rawBody);
@@ -97,23 +108,34 @@ export const handler: Handler = async (event) => {
     // Resolve user
     let uid: string | null = buyerUidFromPayload || null;
     if (!uid && buyerEmail) {
-      const uSnap = await db.collection("users").where("email", "==", buyerEmail).limit(1).get();
+      const uSnap = await db
+        .collection("users")
+        .where("email", "==", buyerEmail)
+        .limit(1)
+        .get();
       if (!uSnap.empty) uid = uSnap.docs[0].id;
     }
     if (!uid) {
       // Cannot proceed without user
-      return { statusCode: 200, body: JSON.stringify({ ok: true, note: "user_not_found" }) };
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ ok: true, note: "user_not_found" }),
+      };
     }
 
     // Load packs and promo config
     const packsSnap = await db.collection("coin_packs").get();
-    const packs = packsSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+    const packs = packsSnap.docs.map((d) => ({
+      id: d.id,
+      ...(d.data() as any),
+    }));
     const promoDoc = await db.collection("promotions").doc("packs").get();
     const promoCfg = promoDoc.exists ? (promoDoc.data() as any) : null;
 
     // Fetch user role if promos are role-based
     const usrDoc = await db.collection("users").doc(uid).get();
-    const userRole = (usrDoc.exists ? (usrDoc.data() as any)?.role : null) || null;
+    const userRole =
+      (usrDoc.exists ? (usrDoc.data() as any)?.role : null) || null;
 
     const now = Date.now();
     const promoActive = (() => {
@@ -124,8 +146,11 @@ export const handler: Handler = async (event) => {
       const end = promoCfg.endAt?.toMillis?.() ?? null;
       if (start && now < start) return 0;
       if (end && now > end) return 0;
-      const roles: string[] = Array.isArray(promoCfg.roles) ? promoCfg.roles : ["all"];
-      if (!roles.includes("all") && userRole && !roles.includes(userRole)) return 0;
+      const roles: string[] = Array.isArray(promoCfg.roles)
+        ? promoCfg.roles
+        : ["all"];
+      if (!roles.includes("all") && userRole && !roles.includes(userRole))
+        return 0;
       return percent;
     })();
 
@@ -146,7 +171,11 @@ export const handler: Handler = async (event) => {
       }
       // If no exact match, pick closest by delta
       if (!chosen) {
-        let best = { p: null as any, delta: Number.POSITIVE_INFINITY, price: 0 };
+        let best = {
+          p: null as any,
+          delta: Number.POSITIVE_INFINITY,
+          price: 0,
+        };
         for (const p of packs) {
           const base = Number(p.price_normal || p.price || 0);
           const perPackPromo = Number(p.promo_percent || 0);
@@ -163,14 +192,21 @@ export const handler: Handler = async (event) => {
     }
 
     if (!chosen) {
-      return { statusCode: 200, body: JSON.stringify({ ok: true, note: "pack_not_matched" }) };
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ ok: true, note: "pack_not_matched" }),
+      };
     }
 
     const rc = Number(chosen.rc || chosen.coins || 0) || 0;
     const bonusPercent = Number(chosen.bonus_percent || chosen.bonus || 0) || 0;
     const credits = rc + Math.round((rc * bonusPercent) / 100);
 
-    const orderId = payload?.order_id || payload?.id || payload?.order?.id || crypto.randomUUID();
+    const orderId =
+      payload?.order_id ||
+      payload?.id ||
+      payload?.order?.id ||
+      crypto.randomUUID();
 
     await db.runTransaction(async (tr) => {
       const userRef = db.collection("users").doc(uid!);
@@ -195,7 +231,10 @@ export const handler: Handler = async (event) => {
 
       // Create salePending for seller (for revenue distribution)
       const sellerCfg = (process.env.PAYHIP_SELLER_UID || "").trim();
-      let sellerId: string | null = sellerCfg && sellerCfg !== "auto" && sellerCfg !== "founder" ? sellerCfg : null;
+      let sellerId: string | null =
+        sellerCfg && sellerCfg !== "auto" && sellerCfg !== "founder"
+          ? sellerCfg
+          : null;
       if (!sellerId) {
         const foundersSnap = await db
           .collection("users")
@@ -205,7 +244,11 @@ export const handler: Handler = async (event) => {
         sellerId = foundersSnap.empty ? null : foundersSnap.docs[0].id;
       }
       if (sellerId) {
-        tr.set(db.collection("users").doc(sellerId), { balances: { pending: FieldValue.increment(credits) } }, { merge: true });
+        tr.set(
+          db.collection("users").doc(sellerId),
+          { balances: { pending: FieldValue.increment(credits) } },
+          { merge: true },
+        );
         tr.set(db.collection("transactions").doc(), {
           uid: sellerId,
           type: "salePending",

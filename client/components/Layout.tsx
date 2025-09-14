@@ -35,6 +35,7 @@ import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 import TosModal from "@/components/TosModal";
 import Notifications from "@/components/Notifications";
 import CreditNotifier from "@/components/CreditNotifier";
+import OnboardingTutorial from "@/components/OnboardingTutorial";
 
 const nav = [
   { to: "/", label: "Accueil", icon: Home },
@@ -110,6 +111,7 @@ function Header() {
 
 function MobileMenu() {
   const { user, logout } = useAuth();
+  const { role } = useProfile();
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -125,7 +127,12 @@ function MobileMenu() {
         <SheetTitle className="sr-only">Menu</SheetTitle>
         <div className="text-sm font-semibold">Menu</div>
         <div className="mt-3 grid gap-2">
-          {nav.map(({ to, label }) => (
+          {(user
+            ? nav.filter(
+                (n) => !["/quests", "/tickets", "/transactions"].includes(n.to),
+              )
+            : nav
+          ).map(({ to, label }) => (
             <Link
               key={to}
               to={to}
@@ -540,13 +547,11 @@ function Footer() {
         <div>
           <h4 className="font-semibold mb-3">Paiements</h4>
           <div className="flex items-center gap-3 text-foreground/70">
-            <StripeLogo />
             <VisaLogo />
             <MastercardLogo />
           </div>
           <p className="mt-3 text-xs text-foreground/60">
-            Transactions sécurisées via Stripe. Redistribution 70% vendeur / 30%
-            admins.
+            Paiements via Payhip. Redistribution 70% vendeur / 30% admins.
           </p>
         </div>
       </div>
@@ -558,29 +563,6 @@ function Footer() {
   );
 }
 
-function StripeLogo() {
-  return (
-    <svg
-      width="52"
-      height="20"
-      viewBox="0 0 52 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <rect width="52" height="20" rx="4" fill="hsl(var(--muted))" />
-      <text
-        x="26"
-        y="13"
-        textAnchor="middle"
-        fontSize="9"
-        fontWeight="700"
-        fill="hsl(var(--secondary))"
-      >
-        Stripe
-      </text>
-    </svg>
-  );
-}
 function VisaLogo() {
   return (
     <svg
@@ -674,6 +656,7 @@ export default function Layout() {
       <CreditNotifier />
       <main className="relative z-10">
         <TosModal />
+        <OnboardingTutorial />
         <Outlet />
       </main>
       <Footer />

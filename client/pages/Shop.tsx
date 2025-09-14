@@ -2,29 +2,30 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthProvider";
 import { useProfile } from "@/context/ProfileProvider";
-import StripeCheckout from "@/components/StripeCheckout";
 import { ShieldCheck, Zap, BadgeDollarSign } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { db } from "@/lib/firebase";
-import {
-  addDoc,
-  collection,
-  doc,
-  onSnapshot,
-  serverTimestamp,
-} from "firebase/firestore";
-
-import { packs } from "@/lib/packs";
+import { collection, doc, onSnapshot } from "firebase/firestore";
+import { packs as defaultPacks } from "@/lib/packs";
 
 export default function Shop() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { addCredits, role } = useProfile();
-  const [open, setOpen] = useState<string | null>(null);
-  const [processing, setProcessing] = useState(false);
-  const [done, setDone] = useState(false);
+  const { role } = useProfile();
   const [promo, setPromo] = useState<number>(0);
   const [promoCfg, setPromoCfg] = useState<any>(null);
+  const [packs, setPacks] = useState<
+    {
+      id: string;
+      name: string;
+      coins: number;
+      price: number;
+      bonus: number;
+      popular?: boolean;
+      best?: boolean;
+      promoPercent?: number;
+    }[]
+  >([]);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "promotions", "packs"), (d) => {
@@ -35,7 +36,26 @@ export default function Shop() {
     return () => unsub();
   }, []);
 
-  const activePromo = (() => {
+  // Load packs from Firestore (fallback to static if empty handled below)
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "coin_packs"), (snap) => {
+      const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
+      const mapped = rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        coins: Number(r.rc || r.coins || 0),
+        price: Number(r.price_normal || r.price || 0),
+        bonus: Number(r.bonus_percent || r.bonus || 0),
+        promoPercent: Number(r.promo_percent || 0),
+        popular: Boolean(r.popular),
+        best: Boolean(r.best),
+      }));
+      setPacks(mapped);
+    });
+    return () => unsub();
+  }, []);
+
+  const activePromo = useMemo(() => {
     if (!promoCfg) return promo;
     const percent = Number(promoCfg.percent ?? promoCfg.all ?? 0);
     if (!percent) return 0;
@@ -49,7 +69,15 @@ export default function Shop() {
       : ["all"];
     if (!roles.includes("all") && role && !roles.includes(role)) return 0;
     return percent;
-  })();
+  }, [promoCfg, promo, role]);
+
+  const payhipUrl = import.meta.env.VITE_PAYHIP_PRODUCT_URL as
+    | string
+    | undefined;
+  const displayPacks = useMemo(
+    () => (packs.length ? packs : defaultPacks),
+    [packs],
+  );
 
   const onBuy = (id: string) => {
     const pack = packs.find((p) => p.id === id)!;
@@ -60,7 +88,18 @@ export default function Shop() {
       });
       return;
     }
-    setOpen(id);
+    if (!payhipUrl) {
+      toast({
+        title: "Configuration Payhip manquante",
+        description: "VITE_PAYHIP_PRODUCT_URL n'est pas défini.",
+      });
+      return;
+    }
+    const perPackPromo = Number(pack.promoPercent || 0);
+    const finalPromo = Math.max(0, (activePromo || 0) + perPackPromo);
+    const finalPrice = Number((pack.price * (1 - finalPromo / 100)).toFixed(2));
+    const url = `${payhipUrl}?buyer=${encodeURIComponent(user.uid)}&amount=${finalPrice.toFixed(2)}`;
+    window.location.href = url;
   };
 
   return (
@@ -71,7 +110,7 @@ export default function Shop() {
             Boutique RotCoins
           </h1>
           <p className="text-sm text-foreground/70">
-            Achetez des crédits instantanément. Paiements sécurisés via Stripe.
+            Achetez des crédits instantanément. Paiements via Payhip.
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs text-foreground/70">
@@ -91,7 +130,7 @@ export default function Shop() {
       </header>
 
       <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {packs.map((p) => (
+        {displayPacks.map((p: any) => (
           <div
             key={p.id}
             className="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-[0_10px_30px_rgba(0,0,0,0.25)] transform transition-transform duration-300 hover:scale-[1.03] hover:-translate-y-1 hover:shadow-2xl"
@@ -124,84 +163,36 @@ export default function Shop() {
             </div>
             <div className="mt-4 flex items-center justify-between">
               <div className="text-foreground/80">
-                {activePromo > 0 ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm line-through opacity-70">
+                {(() => {
+                  const perPackPromo = Number(p.promoPercent || 0);
+                  const finalPromo = Math.max(
+                    0,
+                    (activePromo || 0) + perPackPromo,
+                  );
+                  const discounted = p.price * (1 - finalPromo / 100);
+                  if (finalPromo > 0) {
+                    return (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm line-through opacity-70">
+                          {p.price.toFixed(2)}€
+                        </span>
+                        <span className="text-xl font-extrabold">
+                          {discounted.toFixed(2)}€
+                        </span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <span className="text-xl font-extrabold">
                       {p.price.toFixed(2)}€
                     </span>
-                    <span className="text-xl font-extrabold">
-                      {(p.price * (1 - activePromo / 100)).toFixed(2)}€
-                    </span>
-                  </div>
-                ) : (
-                  <span className="text-xl font-extrabold">
-                    {p.price.toFixed(2)}€
-                  </span>
-                )}
+                  );
+                })()}
               </div>
-              <Button
-                size="sm"
-                onClick={() => onBuy(p.id)}
-                variant="secondary"
-                disabled={processing}
-              >
+              <Button size="sm" onClick={() => onBuy(p.id)} variant="secondary">
                 Acheter
               </Button>
             </div>
-            {open === p.id && (
-              <div className="mt-4">
-                {processing ? (
-                  <div className="flex items-center gap-2 text-sm text-foreground/80">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-primary" />
-                    Traitement du paiement…
-                  </div>
-                ) : done ? (
-                  <div className="text-sm text-emerald-400 font-semibold">
-                    Crédits ajoutés ✔
-                  </div>
-                ) : (
-                  <div>
-                    {activePromo > 0 && (
-                      <div className="mb-2 text-xs text-foreground/70">
-                        Promo: -{activePromo}%
-                      </div>
-                    )}
-                    <StripeCheckout
-                      amount={(p.price * (1 - activePromo / 100)).toFixed(2)}
-                      onSuccess={async (paymentId) => {
-                        try {
-                          setProcessing(true);
-                          const credits =
-                            p.coins + Math.round((p.coins * p.bonus) / 100);
-                          await addCredits(credits);
-                          // Write transaction
-                          await addDoc(collection(db, "transactions"), {
-                            uid: user?.uid,
-                            email: user?.email,
-                            type: "credits_purchase",
-                            orderId: paymentId,
-                            amountEUR: p.price,
-                            credits,
-                            createdAt: serverTimestamp(),
-                          });
-                          setDone(true);
-                          toast({
-                            title: "Paiement réussi",
-                            description: `Vous avez reçu ${credits.toLocaleString()} RC`,
-                          });
-                        } finally {
-                          setProcessing(false);
-                          setTimeout(() => {
-                            setOpen(null);
-                            setDone(false);
-                          }, 1200);
-                        }
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
             <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/5" />
           </div>
         ))}
@@ -210,7 +201,6 @@ export default function Shop() {
       <div className="mt-10 rounded-xl border border-border/60 bg-card p-5">
         <h3 className="font-semibold">Moyens de paiement</h3>
         <div className="mt-3 flex items-center gap-3 text-foreground/70">
-          <StripeLogo />
           <VisaLogo />
           <MastercardLogo />
         </div>
@@ -241,29 +231,6 @@ function GoldCoin({ size = 48 }: { size?: number }) {
   );
 }
 
-function StripeLogo() {
-  return (
-    <svg
-      width="52"
-      height="20"
-      viewBox="0 0 52 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <rect width="52" height="20" rx="4" fill="hsl(var(--muted))" />
-      <text
-        x="26"
-        y="13"
-        textAnchor="middle"
-        fontSize="9"
-        fontWeight="700"
-        fill="hsl(var(--secondary))"
-      >
-        Stripe
-      </text>
-    </svg>
-  );
-}
 function VisaLogo() {
   return (
     <svg

@@ -70,6 +70,7 @@ export default function Shop() {
   }, [promoCfg, promo, role]);
 
   const payhipUrl = import.meta.env.VITE_PAYHIP_PRODUCT_URL as string | undefined;
+  const displayPacks = useMemo(() => (packs.length ? packs : defaultPacks), [packs]);
 
   const onBuy = (id: string) => {
     const pack = packs.find((p) => p.id === id)!;

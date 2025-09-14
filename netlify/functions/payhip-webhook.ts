@@ -194,7 +194,8 @@ export const handler: Handler = async (event) => {
       });
 
       // Create salePending for seller (for revenue distribution)
-      let sellerId: string | null = process.env.PAYHIP_SELLER_UID || null;
+      const sellerCfg = (process.env.PAYHIP_SELLER_UID || "").trim();
+      let sellerId: string | null = sellerCfg && sellerCfg !== "auto" && sellerCfg !== "founder" ? sellerCfg : null;
       if (!sellerId) {
         const foundersSnap = await db
           .collection("users")

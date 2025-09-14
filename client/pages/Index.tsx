@@ -155,7 +155,7 @@ export default function Index() {
             </div>
             <p className="mt-4 text-foreground/80 max-w-prose">
               Achetez et vendez des Brain Rots, gagnez des{" "}
-              <strong>RotCoins</strong>. Paiements Stripe, vendeurs certifiés. ,
+              <strong>RotCoins</strong>. Paiements via Payhip, vendeurs certifiés. ,
               Et Revente
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-3">

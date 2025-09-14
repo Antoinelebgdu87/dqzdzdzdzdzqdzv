@@ -542,13 +542,11 @@ function Footer() {
         <div>
           <h4 className="font-semibold mb-3">Paiements</h4>
           <div className="flex items-center gap-3 text-foreground/70">
-            <StripeLogo />
             <VisaLogo />
             <MastercardLogo />
           </div>
           <p className="mt-3 text-xs text-foreground/60">
-            Transactions sécurisées via Stripe. Redistribution 70% vendeur / 30%
-            admins.
+            Paiements via Payhip. Redistribution 70% vendeur / 30% admins.
           </p>
         </div>
       </div>
@@ -560,29 +558,6 @@ function Footer() {
   );
 }
 
-function StripeLogo() {
-  return (
-    <svg
-      width="52"
-      height="20"
-      viewBox="0 0 52 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <rect width="52" height="20" rx="4" fill="hsl(var(--muted))" />
-      <text
-        x="26"
-        y="13"
-        textAnchor="middle"
-        fontSize="9"
-        fontWeight="700"
-        fill="hsl(var(--secondary))"
-      >
-        Stripe
-      </text>
-    </svg>
-  );
-}
 function VisaLogo() {
   return (
     <svg

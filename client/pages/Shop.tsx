@@ -6,6 +6,7 @@ import { ShieldCheck, Zap, BadgeDollarSign } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, doc, onSnapshot } from "firebase/firestore";
+import { packs as defaultPacks } from "@/lib/packs";
 
 export default function Shop() {
   const { toast } = useToast();

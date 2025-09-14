@@ -495,7 +495,7 @@ export default function AdminPanel() {
         closeReason: reason,
         closedAt: serverTimestamp(),
       });
-      toast({ title: "Ticket fermé" });
+      toast({ title: "Ticket ferm��" });
     } catch (e) {
       console.error("ticket:close failed", e);
     }
@@ -1593,6 +1593,83 @@ export default function AdminPanel() {
           </div>
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+function AdminPacks() {
+  const { toast } = useToast();
+  const [list, setList] = useState<any[]>([]);
+  const [form, setForm] = useState({ id: "", name: "", rc: 0, price_normal: 0, promo_percent: 0, bonus_percent: 0 });
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "coin_packs"), (snap) => {
+      setList(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+    });
+    return () => unsub();
+  }, []);
+
+  const save = async () => {
+    const id = form.id || undefined;
+    const data = {
+      name: form.name.trim(),
+      rc: Number(form.rc) || 0,
+      price_normal: Number(form.price_normal) || 0,
+      promo_percent: Number(form.promo_percent) || 0,
+      bonus_percent: Number(form.bonus_percent) || 0,
+    };
+    try {
+      if (id) await setDoc(doc(db, "coin_packs", id), data, { merge: true });
+      else await addDoc(collection(db, "coin_packs"), data);
+      setForm({ id: "", name: "", rc: 0, price_normal: 0, promo_percent: 0, bonus_percent: 0 });
+      toast({ title: "Pack enregistré" });
+    } catch (e) {
+      console.error("packs:save", e);
+      toast({ title: "Erreur enregistrement", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="mt-2 grid gap-3 md:grid-cols-[320px,1fr]">
+      <div className="rounded-xl border border-border/60 bg-card p-3 space-y-2">
+        <Input placeholder="Nom" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <div className="grid grid-cols-2 gap-2">
+          <Input type="number" placeholder="RC" value={form.rc} onChange={(e) => setForm({ ...form, rc: Number(e.target.value) })} />
+          <Input type="number" step="0.01" placeholder="Prix (€)" value={form.price_normal} onChange={(e) => setForm({ ...form, price_normal: Number(e.target.value) })} />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Input type="number" placeholder="Promo %" value={form.promo_percent} onChange={(e) => setForm({ ...form, promo_percent: Number(e.target.value) })} />
+          <Input type="number" placeholder="Bonus %" value={form.bonus_percent} onChange={(e) => setForm({ ...form, bonus_percent: Number(e.target.value) })} />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button size="sm" onClick={save}>{form.id ? "Mettre à jour" : "Ajouter"}</Button>
+          {form.id && (
+            <Button size="sm" variant="outline" onClick={() => setForm({ id: "", name: "", rc: 0, price_normal: 0, promo_percent: 0, bonus_percent: 0 })}>Nouveau</Button>
+          )}
+        </div>
+      </div>
+      <div className="rounded-xl border border-border/60 bg-card p-3">
+        {list.length === 0 ? (
+          <div className="text-xs text-foreground/60">Aucun pack</div>
+        ) : (
+          <div className="divide-y divide-border/60">
+            {list.map((p) => (
+              <div key={p.id} className="flex items-center gap-3 py-2">
+                <div className="flex-1">
+                  <div className="font-medium text-sm">{p.name}</div>
+                  <div className="text-xs text-foreground/60">{Number(p.rc || 0)} RC • {Number(p.price_normal || 0).toFixed(2)}€ • Promo {Number(p.promo_percent || 0)}% • Bonus {Number(p.bonus_percent || 0)}%</div>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setForm({ id: p.id, name: p.name, rc: Number(p.rc || 0), price_normal: Number(p.price_normal || 0), promo_percent: Number(p.promo_percent || 0), bonus_percent: Number(p.bonus_percent || 0) })}>Edit</Button>
+                <Button size="sm" variant="destructive" onClick={async () => {
+                  if (!window.confirm("Supprimer ce pack ?")) return;
+                  await deleteDoc(doc(db, "coin_packs", p.id));
+                  toast({ title: "Pack supprimé" });
+                }}>Supprimer</Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

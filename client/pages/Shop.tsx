@@ -78,7 +78,7 @@ export default function Shop() {
 
   const discordHandle = "brainrot_market";
 
-  const onBuy = (id: string) => {
+  const onBuy = async (id: string) => {
     const pack = (displayPacks || []).find((p) => p.id === id) as any;
     if (!user) {
       toast({
@@ -88,15 +88,25 @@ export default function Shop() {
       return;
     }
 
-    try {
-      if (navigator?.clipboard) {
-        navigator.clipboard.writeText(discordHandle);
+    // Try to copy Discord handle to clipboard, but guard against permission errors.
+    if (navigator?.clipboard && typeof navigator.clipboard.writeText === "function") {
+      try {
+        await navigator.clipboard.writeText(discordHandle);
+        toast({
+          title: "Contact Discord copié",
+          description: `Le pseudo Discord ${discordHandle} a été copié. Envoyez-lui un message en précisant le pack "${pack?.name || id}" (${pack?.coins || "?"} RC) pour finaliser l'achat.`,
+        });
+        return;
+      } catch (e) {
+        // ignore and fallback to showing instructions
+        // console.warn intentionally omitted from production logs
       }
-    } catch {}
+    }
 
+    // Fallback if clipboard unavailable or blocked
     toast({
-      title: "Contact Discord copié",
-      description: `Le pseudo Discord ${discordHandle} a été copié. Envoyez-lui un message en précisant le pack "${pack?.name || id}" (${pack?.coins || "?"} RC) pour finaliser l'achat.`,
+      title: "Contact Discord",
+      description: `${discordHandle} — envoyez un message en précisant le pack "${pack?.name || id}" (${pack?.coins || "?"} RC) pour finaliser l'achat.`,
     });
   };
 

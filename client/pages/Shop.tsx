@@ -197,10 +197,13 @@ export default function Shop() {
       </div>
 
       <div className="mt-10 rounded-xl border border-border/60 bg-card p-5">
-        <h3 className="font-semibold">Moyens de paiement</h3>
+        <h3 className="font-semibold">Contact pour achat</h3>
         <div className="mt-3 flex items-center gap-3 text-foreground/70">
-          <VisaLogo />
-          <MastercardLogo />
+          <DiscordLogo />
+          <div>
+            Contactez <strong>brainrot_market</strong> sur Discord pour acheter des packs.
+            Nous vous enverrons le lien de paiement et les instructions.
+          </div>
         </div>
       </div>
     </div>

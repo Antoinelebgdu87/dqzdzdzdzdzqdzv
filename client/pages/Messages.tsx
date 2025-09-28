@@ -304,7 +304,7 @@ function Thread({ id }: { id: string }) {
                       <div className="text-xs text-foreground/70">{(p.price ?? 0).toLocaleString()} RC</div>
                       <div className="mt-2 flex gap-2">
                         <Link to="/marketplace">
-                          <Button size="xs" variant="outline">Voir Marketplace</Button>
+                          <Button size="sm" variant="outline">Voir Marketplace</Button>
                         </Link>
                         <Button size="xs" variant="secondary" onClick={() => navigator?.clipboard?.writeText(String(p.id || ""))}>Copier ID</Button>
                       </div>

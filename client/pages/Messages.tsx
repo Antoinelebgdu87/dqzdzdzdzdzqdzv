@@ -359,12 +359,12 @@ function Thread({ id }: { id: string }) {
             <Button variant="outline" size="sm" onClick={() => setShowOffer((v) => !v)}>
               Proposer un produit
             </Button>
-            <Link to="/marketplace">
-              <Button variant="outline" size="sm">Marketplace</Button>
-            </Link>
-            <Link to="/trade">
-              <Button variant="outline" size="sm">Trade</Button>
-            </Link>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/marketplace">Marketplace</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/trade">Trade</Link>
+            </Button>
           </div>
           {showOffer && (
             <div className="mt-2 max-h-40 overflow-auto rounded-md border border-border/60 bg-muted/40 p-2 space-y-2">

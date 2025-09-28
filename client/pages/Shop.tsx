@@ -270,3 +270,13 @@ function MastercardLogo() {
     </svg>
   );
 }
+
+function DiscordLogo() {
+  return (
+    <svg width="44" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="24" height="20" rx="4" fill="hsl(var(--muted))" />
+      <path d="M7.5 8.5c.75 0 1.35.65 1.35 1.45 0 .8-.6 1.45-1.35 1.45-.75 0-1.35-.65-1.35-1.45 0-.8.6-1.45 1.35-1.45zm9 0c.75 0 1.35.65 1.35 1.45 0 .8-.6 1.45-1.35 1.45-.75 0-1.35-.65-1.35-1.45 0-.8.6-1.45 1.35-1.45z" fill="hsl(var(--primary))" />
+      <path d="M4 18s1.5-2 4.5-2c0 0 .5 1.5 2.5 1.5s2.5-1.5 2.5-1.5C18.5 16 20 18 20 18s-1.25 2.5-6 2.5S4 18 4 18z" fill="hsl(var(--primary))" opacity="0.15" />
+    </svg>
+  );
+}

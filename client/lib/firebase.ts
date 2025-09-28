@@ -1,4 +1,3 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
 import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
 import {
   getAuth,

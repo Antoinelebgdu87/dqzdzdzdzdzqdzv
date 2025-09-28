@@ -11,16 +11,16 @@ type Item = { id: string; title: string; image: string };
 const CATALOG: Item[] = [
   { id: "it1", title: "Orcalitos", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F16bab7c767664419af40a866f155b85b?format=webp&width=800" },
   { id: "it2", title: "Lucky Block", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F326d3e85a4364ba9992e29e6a10eed37?format=webp&width=800" },
-  { id: "it3", title: "Sharky", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F32aedddebdcd4936a9477aeeafebe29f?format=webp&width=800" },
-  { id: "it4", title: "Squelette", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2Fdc08f648a591472fb3c5d8e69a89a457?format=webp&width=800" },
+  { id: "it3", title: "Sharko", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F32aedddebdcd4936a9477aeeafebe29f?format=webp&width=800" },
+  { id: "it4", title: "Squelettes", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2Fdd6de1a7138547caaadd56ba95ad92ac?format=webp&width=800" },
   { id: "it5", title: "Banane", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F145d1918e9d7499586d35ed1c056735d?format=webp&width=800" },
   { id: "it6", title: "Tortue", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F6f836c2cc37145fa801a8d7e6fac6138?format=webp&width=800" },
   { id: "it7", title: "Toilette", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F374e74471ed34276b0fe0237c88a5e1d?format=webp&width=800" },
   { id: "it8", title: "Dragon", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F2f0efad7c59f4ceeb2a07def114531b5?format=webp&width=800" },
-  { id: "it9", title: "Café", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F953440e375c94db0857de93ecbe39f8c?format=webp&width=800" },
+  { id: "it9", title: "Tasse", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F953440e375c94db0857de93ecbe39f8c?format=webp&width=800" },
   { id: "it10", title: "Taupe", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F020ba7cc9d4441c59a2bd2883b854b90?format=webp&width=800" },
-  { id: "it11", title: "Orca runner", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F6fbb3f296c0144c1a2e458f629acbdb7?format=webp&width=800" },
-  { id: "it12", title: "Vert", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2Fdc08f648a591472fb3c5d8e69a89a457?format=webp&width=800" },
+  { id: "it11", title: "Tim Cheese", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2Fe818f794e0754269a80253438dc8e4b6?format=webp&width=800" },
+  { id: "it12", title: "Pot magique", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2Fe4fdbcf327684efcbde336cd26ad102a?format=webp&width=800" },
 ];
 
 function Gallery({ onPick }: { onPick: (it: Item) => void }) {

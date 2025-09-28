@@ -288,23 +288,48 @@ function Thread({ id }: { id: string }) {
             const mine = m.senderId === user?.uid;
             const p = m.product || {};
             return (
-              <div key={m.id} className={`max-w-[75%] ${mine ? "ml-auto" : ""}`}>
+              <div
+                key={m.id}
+                className={`max-w-[75%] ${mine ? "ml-auto" : ""}`}
+              >
                 <div
                   className={`mb-1 text-[10px] text-foreground/60 ${mine ? "text-right" : ""}`}
                 >
-                  {mine ? "Vous" : otherUser?.username || otherUser?.email || "Utilisateur"}
+                  {mine
+                    ? "Vous"
+                    : otherUser?.username || otherUser?.email || "Utilisateur"}
                 </div>
-                <div className={`rounded-md border border-border/60 bg-card/70 p-2 text-sm ${mine ? "bg-secondary/10" : "bg-muted/70"}`}>
+                <div
+                  className={`rounded-md border border-border/60 bg-card/70 p-2 text-sm ${mine ? "bg-secondary/10" : "bg-muted/70"}`}
+                >
                   <div className="flex items-center gap-3">
                     {p.image ? (
-                      <img src={p.image} alt={p.title} className="h-12 w-12 rounded object-cover" />
+                      <img
+                        src={p.image}
+                        alt={p.title}
+                        className="h-12 w-12 rounded object-cover"
+                      />
                     ) : null}
                     <div className="min-w-0">
-                      <div className="font-semibold truncate">{p.title || "Produit"}</div>
-                      <div className="text-xs text-foreground/70">{(p.price ?? 0).toLocaleString()} RC</div>
+                      <div className="font-semibold truncate">
+                        {p.title || "Produit"}
+                      </div>
+                      <div className="text-xs text-foreground/70">
+                        {(p.price ?? 0).toLocaleString()} RC
+                      </div>
                       <div className="mt-2 flex gap-2">
-                        <Button asChild size="sm" variant="outline"><Link to="/marketplace">Voir Marketplace</Link></Button>
-                        <Button size="sm" variant="secondary" onClick={() => navigator?.clipboard?.writeText(String(p.id || ""))}>Copier ID</Button>
+                        <Button asChild size="sm" variant="outline">
+                          <Link to="/marketplace">Voir Marketplace</Link>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() =>
+                            navigator?.clipboard?.writeText(String(p.id || ""))
+                          }
+                        >
+                          Copier ID
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -351,10 +376,19 @@ function Thread({ id }: { id: string }) {
       ) : (
         <>
           <div className="mt-2 flex items-center gap-2 flex-wrap">
-            <Button variant="outline" size="icon" aria-label="Emoji" onClick={() => setText((t) => `${t} 😀`)}>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Emoji"
+              onClick={() => setText((t) => `${t} 😀`)}
+            >
               <span className="text-base">😀</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowOffer((v) => !v)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowOffer((v) => !v)}
+            >
               Proposer un produit
             </Button>
             <Button asChild variant="outline" size="sm">
@@ -368,15 +402,23 @@ function Thread({ id }: { id: string }) {
             <div className="mt-2 max-h-40 overflow-auto rounded-md border border-border/60 bg-muted/40 p-2 space-y-2">
               {myProducts.length === 0 ? (
                 <div className="text-xs text-foreground/60">
-                  Aucun produit. <Link to="/marketplace" className="underline">Mettre en vente</Link>
+                  Aucun produit.{" "}
+                  <Link to="/marketplace" className="underline">
+                    Mettre en vente
+                  </Link>
                 </div>
               ) : (
                 myProducts.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between gap-2">
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between gap-2"
+                  >
                     <div className="min-w-0 text-sm truncate">
                       {p.title} — {(p.price ?? 0).toLocaleString()} RC
                     </div>
-                    <Button size="sm" onClick={() => sendProductOffer(p)}>Envoyer</Button>
+                    <Button size="sm" onClick={() => sendProductOffer(p)}>
+                      Envoyer
+                    </Button>
                   </div>
                 ))
               )}

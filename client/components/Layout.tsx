@@ -174,7 +174,7 @@ function MobileMenu() {
                 Profil
               </Link>
               <Link
-                to="/trades"
+                to="/trade"
                 className="rounded-md border border-border/60 px-3 py-2 text-sm hover:bg-muted"
               >
                 Échanges

@@ -7,7 +7,10 @@ export const processPendingSales: RequestHandler = async (_req, res) => {
     try {
       db = await getAdminDb();
     } catch (e: any) {
-      console.warn("processPendingSales: admin DB not configured", e?.message || e);
+      console.warn(
+        "processPendingSales: admin DB not configured",
+        e?.message || e,
+      );
       // Return success but indicate nothing processed to avoid 500 noise in client
       res.json({ ok: true, processed: 0, message: "admin_not_configured" });
       return;

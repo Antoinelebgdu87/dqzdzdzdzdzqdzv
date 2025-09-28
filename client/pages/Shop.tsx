@@ -108,7 +108,7 @@ export default function Shop() {
             Boutique RotCoins
           </h1>
           <p className="text-sm text-foreground/70">
-            Achetez des crédits instantanément. Paiements via Payhip.
+            Achetez des crédits — pour payer, contactez-nous sur Discord : <strong>brainrot_market</strong>.
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs text-foreground/70">

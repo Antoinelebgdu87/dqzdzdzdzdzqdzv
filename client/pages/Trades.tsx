@@ -144,10 +144,17 @@ function DropZone({
 }) {
   return (
     <div
-      onDragOver={(e) => droppable && e.preventDefault()}
+      onDragOver={(e) => {
+        if (!droppable) return;
+        e.preventDefault();
+        try {
+          e.dataTransfer.dropEffect = "move";
+        } catch (err) {}
+      }}
       onDrop={(e) => {
         if (!droppable) return;
-        const id = e.dataTransfer.getData("application/x-item-id");
+        e.preventDefault();
+        const id = e.dataTransfer.getData("application/x-item-id") || e.dataTransfer.getData("text/plain");
         const it = CATALOG.find((x) => x.id === id);
         if (it) onDropItem(it);
       }}

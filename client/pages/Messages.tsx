@@ -67,15 +67,15 @@ export default function Messages() {
       <div className="rounded-xl border border-border/60 bg-card p-3">
         <div className="text-sm font-semibold">Messagerie</div>
         <div className="mt-2 flex flex-wrap gap-2">
-          <Link to="/trade">
-            <Button variant="outline" size="sm">+ Trade</Button>
-          </Link>
-          <Link to="/marketplace">
-            <Button variant="outline" size="sm">Marketplace</Button>
-          </Link>
-          <Link to="/marketplace">
-            <Button size="sm">Vendre</Button>
-          </Link>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/trade">+ Trade</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/marketplace">Marketplace</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link to="/marketplace">Vendre</Link>
+          </Button>
         </div>
         <div className="mt-2 divide-y divide-border/60 max-h-[60vh] overflow-auto">
           {threads.map((t) => (

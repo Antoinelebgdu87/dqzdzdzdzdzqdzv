@@ -71,16 +71,15 @@ export default function Shop() {
     return percent;
   }, [promoCfg, promo, role]);
 
-  const payhipUrl = import.meta.env.VITE_PAYHIP_PRODUCT_URL as
-    | string
-    | undefined;
   const displayPacks = useMemo(
     () => (packs.length ? packs : defaultPacks),
     [packs],
   );
 
-  const onBuy = (id: string) => {
-    const pack = packs.find((p) => p.id === id)!;
+  const discordHandle = "brainrot_market";
+
+  const onBuy = async (id: string) => {
+    const pack = (displayPacks || []).find((p) => p.id === id) as any;
     if (!user) {
       toast({
         title: "Connexion requise",
@@ -88,18 +87,30 @@ export default function Shop() {
       });
       return;
     }
-    if (!payhipUrl) {
-      toast({
-        title: "Configuration Payhip manquante",
-        description: "VITE_PAYHIP_PRODUCT_URL n'est pas défini.",
-      });
-      return;
+
+    // Try to copy Discord handle to clipboard, but guard against permission errors.
+    if (
+      navigator?.clipboard &&
+      typeof navigator.clipboard.writeText === "function"
+    ) {
+      try {
+        await navigator.clipboard.writeText(discordHandle);
+        toast({
+          title: "Contact Discord copié",
+          description: `Le pseudo Discord ${discordHandle} a été copié. Envoyez-lui un message en précisant le pack "${pack?.name || id}" (${pack?.coins || "?"} RC) pour finaliser l'achat.`,
+        });
+        return;
+      } catch (e) {
+        // ignore and fallback to showing instructions
+        // console.warn intentionally omitted from production logs
+      }
     }
-    const perPackPromo = Number(pack.promoPercent || 0);
-    const finalPromo = Math.max(0, (activePromo || 0) + perPackPromo);
-    const finalPrice = Number((pack.price * (1 - finalPromo / 100)).toFixed(2));
-    const url = `${payhipUrl}?buyer=${encodeURIComponent(user.uid)}&amount=${finalPrice.toFixed(2)}`;
-    window.location.href = url;
+
+    // Fallback if clipboard unavailable or blocked
+    toast({
+      title: "Contact Discord",
+      description: `${discordHandle} — envoyez un message en précisant le pack "${pack?.name || id}" (${pack?.coins || "?"} RC) pour finaliser l'achat.`,
+    });
   };
 
   return (
@@ -110,7 +121,8 @@ export default function Shop() {
             Boutique RotCoins
           </h1>
           <p className="text-sm text-foreground/70">
-            Achetez des crédits instantanément. Paiements via Payhip.
+            Achetez des crédits — pour payer, contactez-nous sur Discord :{" "}
+            <strong>brainrot_market</strong>.
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs text-foreground/70">
@@ -199,10 +211,14 @@ export default function Shop() {
       </div>
 
       <div className="mt-10 rounded-xl border border-border/60 bg-card p-5">
-        <h3 className="font-semibold">Moyens de paiement</h3>
+        <h3 className="font-semibold">Contact pour achat</h3>
         <div className="mt-3 flex items-center gap-3 text-foreground/70">
-          <VisaLogo />
-          <MastercardLogo />
+          <DiscordLogo />
+          <div>
+            Contactez <strong>brainrot_market</strong> sur Discord pour acheter
+            des packs. Nous vous enverrons le lien de paiement et les
+            instructions.
+          </div>
         </div>
       </div>
     </div>
@@ -266,6 +282,29 @@ function MastercardLogo() {
       <rect width="44" height="20" rx="4" fill="hsl(var(--muted))" />
       <circle cx="18" cy="10" r="5" fill="#EB001B" />
       <circle cx="26" cy="10" r="5" fill="#F79E1B" />
+    </svg>
+  );
+}
+
+function DiscordLogo() {
+  return (
+    <svg
+      width="44"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect width="24" height="20" rx="4" fill="hsl(var(--muted))" />
+      <path
+        d="M7.5 8.5c.75 0 1.35.65 1.35 1.45 0 .8-.6 1.45-1.35 1.45-.75 0-1.35-.65-1.35-1.45 0-.8.6-1.45 1.35-1.45zm9 0c.75 0 1.35.65 1.35 1.45 0 .8-.6 1.45-1.35 1.45-.75 0-1.35-.65-1.35-1.45 0-.8.6-1.45 1.35-1.45z"
+        fill="hsl(var(--primary))"
+      />
+      <path
+        d="M4 18s1.5-2 4.5-2c0 0 .5 1.5 2.5 1.5s2.5-1.5 2.5-1.5C18.5 16 20 18 20 18s-1.25 2.5-6 2.5S4 18 4 18z"
+        fill="hsl(var(--primary))"
+        opacity="0.15"
+      />
     </svg>
   );
 }

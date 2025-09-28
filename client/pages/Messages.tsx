@@ -15,7 +15,7 @@ import {
 } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Messages() {
@@ -66,6 +66,17 @@ export default function Messages() {
     <div className="container py-10 grid gap-4 md:grid-cols-[260px,1fr]">
       <div className="rounded-xl border border-border/60 bg-card p-3">
         <div className="text-sm font-semibold">Messagerie</div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link to="/trade">+ Trade</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/marketplace">Marketplace</Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link to="/marketplace">Vendre</Link>
+          </Button>
+        </div>
         <div className="mt-2 divide-y divide-border/60 max-h-[60vh] overflow-auto">
           {threads.map((t) => (
             <button
@@ -106,6 +117,20 @@ function Thread({ id }: { id: string }) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [threadMeta, setThreadMeta] = useState<any>(null);
   const [otherUser, setOtherUser] = useState<any>(null);
+  const [showOffer, setShowOffer] = useState(false);
+  const [myProducts, setMyProducts] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!user || !showOffer) return;
+    const q = query(
+      collection(db, "products"),
+      where("sellerId", "==", user.uid),
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      setMyProducts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    });
+    return () => unsub();
+  }, [user, showOffer]);
 
   useEffect(() => {
     const q = query(
@@ -194,6 +219,46 @@ function Thread({ id }: { id: string }) {
     }
   };
 
+  const sendProductOffer = async (p: any) => {
+    if (!user || !p) return;
+    if (threadMeta?.system) {
+      toast({
+        title: "Impossible de répondre",
+        description:
+          "Ce message provient du système et n'accepte pas de réponses.",
+        variant: "default",
+      });
+      return;
+    }
+    try {
+      await addDoc(collection(db, "threads", id, "messages"), {
+        senderId: user.uid,
+        type: "product_offer",
+        product: {
+          id: p.id,
+          title: p.title,
+          price: p.price ?? 0,
+          image: p.imageUrl || p.image || null,
+        },
+        createdAt: serverTimestamp(),
+      });
+      await setDoc(
+        doc(db, "threads", id),
+        {
+          lastMessage: {
+            text: `Offre produit: ${p.title} (${p.price ?? 0} RC)`,
+            senderId: user.uid,
+          },
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true },
+      );
+      setShowOffer(false);
+    } catch (e) {
+      console.error("thread:sendOffer failed", e);
+    }
+  };
+
   return (
     <div className="flex h-full flex-col">
       <div className="mx-2 mb-2 flex items-center justify-between">
@@ -219,6 +284,59 @@ function Thread({ id }: { id: string }) {
       ) : null}
       <div className="flex-1 space-y-2 overflow-auto p-2">
         {msgs.map((m) => {
+          if (m.type === "product_offer") {
+            const mine = m.senderId === user?.uid;
+            const p = m.product || {};
+            return (
+              <div
+                key={m.id}
+                className={`max-w-[75%] ${mine ? "ml-auto" : ""}`}
+              >
+                <div
+                  className={`mb-1 text-[10px] text-foreground/60 ${mine ? "text-right" : ""}`}
+                >
+                  {mine
+                    ? "Vous"
+                    : otherUser?.username || otherUser?.email || "Utilisateur"}
+                </div>
+                <div
+                  className={`rounded-md border border-border/60 bg-card/70 p-2 text-sm ${mine ? "bg-secondary/10" : "bg-muted/70"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    {p.image ? (
+                      <img
+                        src={p.image}
+                        alt={p.title}
+                        className="h-12 w-12 rounded object-cover"
+                      />
+                    ) : null}
+                    <div className="min-w-0">
+                      <div className="font-semibold truncate">
+                        {p.title || "Produit"}
+                      </div>
+                      <div className="text-xs text-foreground/70">
+                        {(p.price ?? 0).toLocaleString()} RC
+                      </div>
+                      <div className="mt-2 flex gap-2">
+                        <Button asChild size="sm" variant="outline">
+                          <Link to="/marketplace">Voir Marketplace</Link>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() =>
+                            navigator?.clipboard?.writeText(String(p.id || ""))
+                          }
+                        >
+                          Copier ID
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }
           if (m.senderId === "system")
             return (
               <div
@@ -256,17 +374,68 @@ function Thread({ id }: { id: string }) {
           Message système — les réponses sont désactivées.
         </div>
       ) : (
-        <div className="mt-2 flex items-center gap-2">
-          <Input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Votre message…"
-            onKeyDown={(e) => {
-              if (e.key === "Enter") send();
-            }}
-          />
-          <Button onClick={send}>Envoyer</Button>
-        </div>
+        <>
+          <div className="mt-2 flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Emoji"
+              onClick={() => setText((t) => `${t} 😀`)}
+            >
+              <span className="text-base">😀</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowOffer((v) => !v)}
+            >
+              Proposer un produit
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/marketplace">Marketplace</Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/trade">Trade</Link>
+            </Button>
+          </div>
+          {showOffer && (
+            <div className="mt-2 max-h-40 overflow-auto rounded-md border border-border/60 bg-muted/40 p-2 space-y-2">
+              {myProducts.length === 0 ? (
+                <div className="text-xs text-foreground/60">
+                  Aucun produit.{" "}
+                  <Link to="/marketplace" className="underline">
+                    Mettre en vente
+                  </Link>
+                </div>
+              ) : (
+                myProducts.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between gap-2"
+                  >
+                    <div className="min-w-0 text-sm truncate">
+                      {p.title} — {(p.price ?? 0).toLocaleString()} RC
+                    </div>
+                    <Button size="sm" onClick={() => sendProductOffer(p)}>
+                      Envoyer
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+          <div className="mt-2 flex items-center gap-2">
+            <Input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Votre message…"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") send();
+              }}
+            />
+            <Button onClick={send}>Envoyer</Button>
+          </div>
+        </>
       )}
     </div>
   );

@@ -14,6 +14,21 @@ import {
   Menu,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
+
+declare global {
+  interface Window {
+    _fs_namespace?: string | undefined;
+  }
+}
+
+// Ensure FullStory namespace is set early to avoid namespace conflicts from embedded scripts
+if (typeof window !== "undefined") {
+  try {
+    window._fs_namespace = window._fs_namespace || "FS";
+  } catch (e) {
+    // ignore
+  }
+}
 import {
   Tooltip,
   TooltipContent,
@@ -545,7 +560,7 @@ function Footer() {
             </li>
             <li>
               <Link className="hover:text-foreground" to="/">
-                Conditions & légales
+                Conditions & l��gales
               </Link>
             </li>
           </ul>

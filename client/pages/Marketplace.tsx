@@ -233,18 +233,66 @@ function AddProduct({
 
   const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    const f = e.dataTransfer.files?.[0];
-    if (!f) return;
-    // show immediate preview while processing
     try {
-      const p = URL.createObjectURL(f);
-      setPreviewUrl(p);
-    } catch {}
-    // reuse same logic as onPick
-    const fake = {
-      target: { files: [f] },
-    } as unknown as React.ChangeEvent<HTMLInputElement>;
-    await onPick(fake);
+      const dt = e.dataTransfer;
+      // 1) File drop
+      const file = dt.files && dt.files[0];
+      if (file) {
+        try {
+          const p = URL.createObjectURL(file);
+          setPreviewUrl(p);
+        } catch {}
+        const fake = {
+          target: { files: [file] },
+        } as unknown as React.ChangeEvent<HTMLInputElement>;
+        await onPick(fake);
+        return;
+      }
+      // 2) URL drop (from browser)
+      const uri = dt.getData("text/uri-list") || dt.getData("text/plain") || "";
+      const trimmed = uri.trim();
+      if (trimmed) {
+        // try to extract src from dropped HTML if needed
+        let val = trimmed;
+        if (!/^data:image\//i.test(val) && !/^https?:\/\//i.test(val)) {
+          const html = dt.getData("text/html");
+          if (html) {
+            const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+            if (m?.[1]) val = m[1];
+          }
+        }
+        if (
+          /^data:image\//i.test(val) ||
+          /^https?:\/\/.+\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(val)
+        ) {
+          setImageUrl(val);
+          setPreviewUrl(null);
+          return;
+        }
+      }
+      // 3) Items API
+      const items = dt.items;
+      if (items && items.length) {
+        for (let i = 0; i < items.length; i++) {
+          const it = items[i];
+          if (it.kind === "string") {
+            it.getAsString((s) => {
+              const v = s.trim();
+              if (
+                v.startsWith("data:image/") ||
+                /^https?:\/\/.+\.(png|jpe?g|webp|gif|svg)(\?.*)?$/i.test(v)
+              ) {
+                setImageUrl(v);
+                setPreviewUrl(null);
+              }
+            });
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("drop handling failed", err);
+    }
   };
 
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {

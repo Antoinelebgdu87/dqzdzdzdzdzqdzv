@@ -14,6 +14,21 @@ import {
   Menu,
 } from "lucide-react";
 import React, { useEffect, useState } from "react";
+
+declare global {
+  interface Window {
+    _fs_namespace?: string | undefined;
+  }
+}
+
+// Ensure FullStory namespace is set early to avoid namespace conflicts from embedded scripts
+if (typeof window !== "undefined") {
+  try {
+    window._fs_namespace = window._fs_namespace || "FS";
+  } catch (e) {
+    // ignore
+  }
+}
 import {
   Tooltip,
   TooltipContent,
@@ -627,7 +642,24 @@ export default function Layout() {
     fetch("/api/process-pending", { method: "POST" }).catch(() => {});
 
     // Global error listeners to help debug 'Script error.' and uncaught rejections
+    const shouldIgnore = (msg: string) => {
+      if (!msg) return false;
+      const m = msg.toLowerCase();
+      return (
+        m.includes("iframe evaluation timeout") ||
+        m.includes("failed to read the 'cookie' property") ||
+        m.includes("could not get cookie") ||
+        m.includes("fullstory namespace conflict")
+      );
+    };
+
     const onError = (event: ErrorEvent) => {
+      const msg = String(event.message || "");
+      if (shouldIgnore(msg)) {
+        // eslint-disable-next-line no-console
+        console.warn("Ignored iframe/cookie error:", msg);
+        return;
+      }
       // eslint-disable-next-line no-console
       console.error(
         "Global error captured:",
@@ -639,6 +671,13 @@ export default function Layout() {
       );
     };
     const onRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      const msg = String(reason?.message || reason || "");
+      if (shouldIgnore(msg)) {
+        // eslint-disable-next-line no-console
+        console.warn("Ignored iframe/cookie unhandled rejection:", msg);
+        return;
+      }
       // eslint-disable-next-line no-console
       console.error("Unhandled promise rejection:", event.reason);
     };

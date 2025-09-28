@@ -39,6 +39,17 @@ export default function Register() {
     const { db } = await import("@/lib/firebase");
     const mod = await import("@/lib/firebase");
     const auth = mod.auth;
+
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      toast({
+        title: "Hors-ligne",
+        description:
+          "Vous êtes hors-ligne. Vérifiez votre connexion et réessayez.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!auth) {
       toast({
         title: "Auth indisponible",
@@ -72,8 +83,12 @@ export default function Register() {
           );
           break;
         } catch (e: any) {
-          const msg = String(e?.code || e?.message || e);
-          if (msg.includes("network") && attempt < 2) {
+          const code = String(e?.code || e?.message || e);
+          // firebase uses 'auth/network-request-failed' code for network issues
+          const isNetwork =
+            code.includes("network") ||
+            code.includes("auth/network-request-failed");
+          if (isNetwork && attempt < 2) {
             // wait then retry
             await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
             continue;
@@ -138,15 +153,15 @@ export default function Register() {
       console.error("createUser failed", err);
       const code = err?.code || err?.message || "";
       if (
-        code.includes("network") ||
-        code.includes("auth/network-request-failed")
+        String(code).includes("network") ||
+        String(code).includes("auth/network-request-failed")
       ) {
         toast({
           title: "Erreur réseau",
           description: "Vérifiez votre connexion internet et réessayez.",
           variant: "destructive",
         });
-      } else if (code.includes("auth/email-already-in-use")) {
+      } else if (String(code).includes("auth/email-already-in-use")) {
         toast({
           title: "Email déjà utilisé",
           description: "Utilisez un autre email ou connectez-vous.",

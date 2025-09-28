@@ -306,7 +306,7 @@ function Thread({ id }: { id: string }) {
                         <Link to="/marketplace">
                           <Button size="sm" variant="outline">Voir Marketplace</Button>
                         </Link>
-                        <Button size="xs" variant="secondary" onClick={() => navigator?.clipboard?.writeText(String(p.id || ""))}>Copier ID</Button>
+                        <Button size="sm" variant="secondary" onClick={() => navigator?.clipboard?.writeText(String(p.id || ""))}>Copier ID</Button>
                       </div>
                     </div>
                   </div>

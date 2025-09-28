@@ -1,15 +1,26 @@
 import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/context/AuthProvider";
+import { db } from "@/lib/firebase";
+import { addDoc, collection, doc, getDocs, query, serverTimestamp, setDoc, where } from "firebase/firestore";
+import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router-dom";
 
 type Item = { id: string; title: string; image: string };
 
 const CATALOG: Item[] = [
-  { id: "it1", title: "Shark", image: "/placeholder.svg" },
-  { id: "it2", title: "Banane", image: "/placeholder.svg" },
-  { id: "it3", title: "Lucky Block", image: "/placeholder.svg" },
-  { id: "it4", title: "Squelette", image: "/placeholder.svg" },
-  { id: "it5", title: "Dragon", image: "/placeholder.svg" },
-  { id: "it6", title: "Café", image: "/placeholder.svg" },
+  { id: "it1", title: "Orcalitos", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F16bab7c767664419af40a866f155b85b?format=webp&width=800" },
+  { id: "it2", title: "Lucky Block", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F326d3e85a4364ba9992e29e6a10eed37?format=webp&width=800" },
+  { id: "it3", title: "Sharky", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F32aedddebdcd4936a9477aeeafebe29f?format=webp&width=800" },
+  { id: "it4", title: "Squelette", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2Fdc08f648a591472fb3c5d8e69a89a457?format=webp&width=800" },
+  { id: "it5", title: "Banane", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F145d1918e9d7499586d35ed1c056735d?format=webp&width=800" },
+  { id: "it6", title: "Tortue", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F6f836c2cc37145fa801a8d7e6fac6138?format=webp&width=800" },
+  { id: "it7", title: "Toilette", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F374e74471ed34276b0fe0237c88a5e1d?format=webp&width=800" },
+  { id: "it8", title: "Dragon", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F2f0efad7c59f4ceeb2a07def114531b5?format=webp&width=800" },
+  { id: "it9", title: "Café", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F953440e375c94db0857de93ecbe39f8c?format=webp&width=800" },
+  { id: "it10", title: "Taupe", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F020ba7cc9d4441c59a2bd2883b854b90?format=webp&width=800" },
+  { id: "it11", title: "Orca runner", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2F6fbb3f296c0144c1a2e458f629acbdb7?format=webp&width=800" },
+  { id: "it12", title: "Vert", image: "https://cdn.builder.io/api/v1/image/assets%2F5bddff4c4a064b01841a4121d6db322c%2Fdc08f648a591472fb3c5d8e69a89a457?format=webp&width=800" },
 ];
 
 function Gallery({ onPick }: { onPick: (it: Item) => void }) {
@@ -88,9 +99,12 @@ function DropZone({
 }
 
 export default function Trades() {
+  const { user } = useAuth();
+  const nav = useNavigate();
   const [mine, setMine] = useState<Item[]>([]);
   const [theirs, setTheirs] = useState<Item[]>([]);
-  const canAccept = mine.length > 0 && theirs.length > 0;
+  const [partnerEmail, setPartnerEmail] = useState("");
+  const canAccept = mine.length > 0 && theirs.length > 0 && Boolean(partnerEmail.trim());
   const shareText = useMemo(
     () =>
       `Proposition d'échange — Moi: ${mine.map((i) => i.title).join(", ")} ⇄ Toi: ${theirs
@@ -99,6 +113,39 @@ export default function Trades() {
     [mine, theirs],
   );
 
+  const openThread = async (accepted: boolean) => {
+    if (!user || !partnerEmail.trim()) return;
+    const res = await getDocs(query(collection(db, "users"), where("email", "==", partnerEmail.trim())));
+    if (res.empty) {
+      alert("Utilisateur introuvable (email).");
+      return;
+    }
+    const other = { id: res.docs[0].id, ...(res.docs[0].data() as any) };
+    const docRef = await addDoc(collection(db, "threads"), {
+      participants: [user.uid, other.id],
+      title: "Échange proposé",
+      updatedAt: serverTimestamp(),
+      lastMessage: { text: accepted ? "Échange accepté" : "Nouvelle proposition", senderId: "system" },
+    });
+    const text = `${accepted ? "ÉCHANGE ACCEPTÉ" : "PROPOSITION D'ÉCHANGE"}\nMoi: ${mine
+      .map((i) => i.title)
+      .join(", ")}\nToi: ${theirs.map((i) => i.title).join(", ")}\nImages: ${[...mine, ...theirs]
+      .map((i) => i.image)
+      .slice(0, 6)
+      .join(" ")}`;
+    await addDoc(collection(db, "threads", docRef.id, "messages"), {
+      senderId: "system",
+      text,
+      createdAt: serverTimestamp(),
+    });
+    await setDoc(
+      doc(db, "threads", docRef.id),
+      { lastMessage: { text, senderId: "system" }, updatedAt: serverTimestamp() },
+      { merge: true },
+    );
+    nav(`/messages?thread=${docRef.id}`);
+  };
+
   return (
     <div className="container py-10">
       <h1 className="font-display text-2xl font-bold">Échanges</h1>
@@ -106,6 +153,15 @@ export default function Trades() {
         Proposez un échange en glissant des objets de la galerie vers chaque
         colonne, puis partagez ou acceptez.
       </p>
+
+      <div className="mt-4 flex items-center gap-3">
+        <Input
+          placeholder="Email de l'autre utilisateur"
+          value={partnerEmail}
+          onChange={(e) => setPartnerEmail(e.target.value)}
+          className="w-72"
+        />
+      </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <DropZone
@@ -132,13 +188,13 @@ export default function Trades() {
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(shareText);
-              alert("Lien copié dans le presse-papiers (texte de l'offre). Partagez-le à votre partenaire.");
             } catch {}
+            await openThread(false);
           }}
         >
           Partager l'offre
         </Button>
-        <Button disabled={!canAccept} onClick={() => alert("Échange accepté (prototype)")}>Accepter l'échange</Button>
+        <Button disabled={!canAccept} onClick={() => openThread(true)}>Accepter l'échange</Button>
         <Button variant="outline" onClick={() => { setMine([]); setTheirs([]); }}>
           Réinitialiser
         </Button>

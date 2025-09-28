@@ -71,16 +71,15 @@ export default function Shop() {
     return percent;
   }, [promoCfg, promo, role]);
 
-  const payhipUrl = import.meta.env.VITE_PAYHIP_PRODUCT_URL as
-    | string
-    | undefined;
   const displayPacks = useMemo(
     () => (packs.length ? packs : defaultPacks),
     [packs],
   );
 
+  const discordHandle = "brainrot_market";
+
   const onBuy = (id: string) => {
-    const pack = packs.find((p) => p.id === id)!;
+    const pack = (displayPacks || []).find((p) => p.id === id) as any;
     if (!user) {
       toast({
         title: "Connexion requise",
@@ -88,18 +87,17 @@ export default function Shop() {
       });
       return;
     }
-    if (!payhipUrl) {
-      toast({
-        title: "Configuration Payhip manquante",
-        description: "VITE_PAYHIP_PRODUCT_URL n'est pas défini.",
-      });
-      return;
-    }
-    const perPackPromo = Number(pack.promoPercent || 0);
-    const finalPromo = Math.max(0, (activePromo || 0) + perPackPromo);
-    const finalPrice = Number((pack.price * (1 - finalPromo / 100)).toFixed(2));
-    const url = `${payhipUrl}?buyer=${encodeURIComponent(user.uid)}&amount=${finalPrice.toFixed(2)}`;
-    window.location.href = url;
+
+    try {
+      if (navigator?.clipboard) {
+        navigator.clipboard.writeText(discordHandle);
+      }
+    } catch {}
+
+    toast({
+      title: "Contact Discord copié",
+      description: `Le pseudo Discord ${discordHandle} a été copié. Envoyez-lui un message en précisant le pack "${pack?.name || id}" (${pack?.coins || "?"} RC) pour finaliser l'achat.`,
+    });
   };
 
   return (

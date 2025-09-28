@@ -43,7 +43,8 @@ export default function Register() {
     if (typeof window !== "undefined" && !navigator.onLine) {
       toast({
         title: "Hors-ligne",
-        description: "Vous êtes hors-ligne. Vérifiez votre connexion et réessayez.",
+        description:
+          "Vous êtes hors-ligne. Vérifiez votre connexion et réessayez.",
         variant: "destructive",
       });
       return;
@@ -84,7 +85,9 @@ export default function Register() {
         } catch (e: any) {
           const code = String(e?.code || e?.message || e);
           // firebase uses 'auth/network-request-failed' code for network issues
-          const isNetwork = code.includes("network") || code.includes("auth/network-request-failed");
+          const isNetwork =
+            code.includes("network") ||
+            code.includes("auth/network-request-failed");
           if (isNetwork && attempt < 2) {
             // wait then retry
             await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));

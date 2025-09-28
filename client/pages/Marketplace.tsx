@@ -242,7 +242,9 @@ function AddProduct({
           const p = URL.createObjectURL(file);
           setPreviewUrl(p);
         } catch {}
-        const fake = { target: { files: [file] } } as unknown as React.ChangeEvent<HTMLInputElement>;
+        const fake = {
+          target: { files: [file] },
+        } as unknown as React.ChangeEvent<HTMLInputElement>;
         await onPick(fake);
         return;
       }

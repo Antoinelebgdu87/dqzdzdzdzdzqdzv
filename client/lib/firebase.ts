@@ -19,16 +19,25 @@ const firebaseConfig = {
 };
 
 // Only initialize firebase app in the browser runtime to avoid server-side SDK issues
-export const app: FirebaseApp | null = typeof window !== "undefined" ? (getApps().length ? getApp() : initializeApp(firebaseConfig)) : null;
+export const app: FirebaseApp | null =
+  typeof window !== "undefined"
+    ? getApps().length
+      ? getApp()
+      : initializeApp(firebaseConfig)
+    : null;
 
 // Initialize Firestore only in the browser
-export const db: Firestore | undefined = typeof window !== "undefined" && app ? initializeFirestore(app, {
-  useFetchStreams: false,
-  experimentalAutoDetectLongPolling: true,
-} as any) : undefined;
+export const db: Firestore | undefined =
+  typeof window !== "undefined" && app
+    ? initializeFirestore(app, {
+        useFetchStreams: false,
+        experimentalAutoDetectLongPolling: true,
+      } as any)
+    : undefined;
 
 // Auth is browser-only: guard initialization so server builds don't initialize auth components
-export const auth: Auth | undefined = typeof window !== "undefined" && app ? getAuth(app) : undefined;
+export const auth: Auth | undefined =
+  typeof window !== "undefined" && app ? getAuth(app) : undefined;
 
 // Optional: keep persistence if desired
 if (typeof window !== "undefined" && auth) {

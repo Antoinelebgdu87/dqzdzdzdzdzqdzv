@@ -154,7 +154,9 @@ function DropZone({
       onDrop={(e) => {
         if (!droppable) return;
         e.preventDefault();
-        const id = e.dataTransfer.getData("application/x-item-id") || e.dataTransfer.getData("text/plain");
+        const id =
+          e.dataTransfer.getData("application/x-item-id") ||
+          e.dataTransfer.getData("text/plain");
         const it = CATALOG.find((x) => x.id === id);
         if (it) onDropItem(it);
       }}

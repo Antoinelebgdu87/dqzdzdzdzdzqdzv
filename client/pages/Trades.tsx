@@ -98,9 +98,16 @@ function Gallery({ onPick }: { onPick: (it: Item) => void }) {
         <button
           key={it.id}
           draggable
-          onDragStart={(e) =>
-            e.dataTransfer.setData("application/x-item-id", it.id)
-          }
+          onDragStart={(e) => {
+            try {
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData("application/x-item-id", it.id);
+              // fallback for some browsers
+              e.dataTransfer.setData("text/plain", it.id);
+            } catch (err) {
+              // ignore
+            }
+          }}
           onClick={() => onPick(it)}
           className="rounded-md border border-border/60 overflow-hidden bg-card hover:bg-muted"
           title="Glisser pour proposer l'objet"

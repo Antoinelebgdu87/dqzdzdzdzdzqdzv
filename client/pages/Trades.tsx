@@ -1,10 +1,18 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/context/AuthProvider";
-import { db } from "@/lib/firebase";
-import { addDoc, collection, doc, getDocs, query, serverTimestamp, setDoc, where } from "firebase/firestore";
 import { Input } from "@/components/ui/input";
-import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthProvider";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { db } from "@/lib/firebase";
+import {
+  addDoc,
+  collection,
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 
 type Item = { id: string; title: string; image: string };
 
@@ -30,9 +38,7 @@ function Gallery({ onPick }: { onPick: (it: Item) => void }) {
         <button
           key={it.id}
           draggable
-          onDragStart={(e) => {
-            e.dataTransfer.setData("application/x-item-id", it.id);
-          }}
+          onDragStart={(e) => e.dataTransfer.setData("application/x-item-id", it.id)}
           onClick={() => onPick(it)}
           className="rounded-md border border-border/60 overflow-hidden bg-card hover:bg-muted"
           title="Glisser pour proposer l'objet"
@@ -53,23 +59,30 @@ function Gallery({ onPick }: { onPick: (it: Item) => void }) {
 function DropZone({
   title,
   items,
+  droppable,
   onDropItem,
   onRemove,
+  offer,
+  onOfferChange,
 }: {
   title: string;
   items: Item[];
+  droppable?: boolean;
   onDropItem: (it: Item) => void;
   onRemove: (id: string) => void;
+  offer?: number;
+  onOfferChange?: (n: number) => void;
 }) {
   return (
     <div
-      onDragOver={(e) => e.preventDefault()}
+      onDragOver={(e) => droppable && e.preventDefault()}
       onDrop={(e) => {
+        if (!droppable) return;
         const id = e.dataTransfer.getData("application/x-item-id");
         const it = CATALOG.find((x) => x.id === id);
         if (it) onDropItem(it);
       }}
-      className="rounded-xl border border-border/60 bg-card/80 p-4 min-h-[200px]"
+      className="rounded-xl border border-border/60 bg-card/80 p-4 min-h-[220px]"
     >
       <div className="text-sm font-semibold mb-2">{title}</div>
       {items.length === 0 ? (
@@ -83,16 +96,31 @@ function DropZone({
                 style={{ backgroundImage: `url(${it.image})` }}
                 title={it.title}
               />
-              <button
-                onClick={() => onRemove(it.id)}
-                className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 text-white text-xs"
-                aria-label="Retirer"
-              >
-                ×
-              </button>
+              {droppable && (
+                <button
+                  onClick={() => onRemove(it.id)}
+                  className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/60 text-white text-xs"
+                  aria-label="Retirer"
+                >
+                  ×
+                </button>
+              )}
             </li>
           ))}
         </ul>
+      )}
+      {droppable && (
+        <div className="mt-3 flex items-center gap-2">
+          <Input
+            type="number"
+            min={0}
+            value={offer ?? 0}
+            onChange={(e) => onOfferChange?.(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+            placeholder="Offre (RC / Robux)"
+            className="h-9 w-48"
+          />
+          <span className="text-xs text-foreground/60">Optionnel</span>
+        </div>
       )}
     </div>
   );
@@ -101,109 +129,166 @@ function DropZone({
 export default function Trades() {
   const { user } = useAuth();
   const nav = useNavigate();
-  const [mine, setMine] = useState<Item[]>([]);
-  const [theirs, setTheirs] = useState<Item[]>([]);
-  const [partnerEmail, setPartnerEmail] = useState("");
-  const canAccept = mine.length > 0 && theirs.length > 0 && Boolean(partnerEmail.trim());
-  const shareText = useMemo(
-    () =>
-      `Proposition d'échange — Moi: ${mine.map((i) => i.title).join(", ")} ⇄ Toi: ${theirs
-        .map((i) => i.title)
-        .join(", ")}`,
-    [mine, theirs],
-  );
+  const [sp, setSp] = useSearchParams();
+  const tradeId = sp.get("invite");
+  const [trade, setTrade] = useState<any | null>(null);
 
-  const openThread = async (accepted: boolean) => {
-    if (!user || !partnerEmail.trim()) return;
-    const res = await getDocs(query(collection(db, "users"), where("email", "==", partnerEmail.trim())));
-    if (res.empty) {
-      alert("Utilisateur introuvable (email).");
-      return;
+  useEffect(() => {
+    if (!tradeId) return;
+    const ref = doc(db, "trades", tradeId);
+    const unsub = onSnapshot(ref, (d) => setTrade({ id: d.id, ...(d.data() as any) }));
+    return () => unsub();
+  }, [tradeId]);
+
+  // Join trade when opened via invite link
+  useEffect(() => {
+    if (!user || !tradeId) return;
+    const ref = doc(db, "trades", tradeId);
+    const p: string[] = trade?.participants || [];
+    if (trade && !p.includes(user.uid) && p.length < 2) {
+      updateDoc(ref, {
+        participants: [...p, user.uid],
+        updatedAt: serverTimestamp(),
+        [`sides.${user.uid}`]: { items: [], offerRC: 0, accepted: false },
+        status: "active",
+      }).catch(() => {});
     }
-    const other = { id: res.docs[0].id, ...(res.docs[0].data() as any) };
-    const docRef = await addDoc(collection(db, "threads"), {
-      participants: [user.uid, other.id],
-      title: "Échange proposé",
+  }, [user, tradeId, trade?.participants, trade?.id]);
+
+  const me = user?.uid;
+  const other = (trade?.participants || []).find((x: string) => x !== me) || null;
+  const mySide = (trade?.sides || {})[me || ""] || { items: [], offerRC: 0, accepted: false };
+  const theirSide = (trade?.sides || {})[other || ""] || { items: [], offerRC: 0, accepted: false };
+
+  const mine: Item[] = (mySide.items || []).map((id: string) => CATALOG.find((i) => i.id === id)).filter(Boolean) as Item[];
+  const theirs: Item[] = (theirSide.items || []).map((id: string) => CATALOG.find((i) => i.id === id)).filter(Boolean) as Item[];
+
+  const createInvite = async () => {
+    if (!user) return;
+    const docRef = await addDoc(collection(db, "trades"), {
+      createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-      lastMessage: { text: accepted ? "Échange accepté" : "Nouvelle proposition", senderId: "system" },
+      participants: [user.uid],
+      status: "pending",
+      sides: { [user.uid]: { items: [], offerRC: 0, accepted: false } },
     });
-    const text = `${accepted ? "ÉCHANGE ACCEPTÉ" : "PROPOSITION D'ÉCHANGE"}\nMoi: ${mine
-      .map((i) => i.title)
-      .join(", ")}\nToi: ${theirs.map((i) => i.title).join(", ")}\nImages: ${[...mine, ...theirs]
-      .map((i) => i.image)
-      .slice(0, 6)
-      .join(" ")}`;
-    await addDoc(collection(db, "threads", docRef.id, "messages"), {
+    setSp({ invite: docRef.id });
+  };
+
+  const copyInvite = async () => {
+    const url = `${window.location.origin}/trades?invite=${trade?.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      alert("Lien d'invitation copié. Envoyez-le à l'autre utilisateur.");
+    } catch {}
+  };
+
+  const updateMySide = async (next: { items?: string[]; offerRC?: number; accepted?: boolean }) => {
+    if (!user || !trade) return;
+    const ref = doc(db, "trades", trade.id);
+    await setDoc(
+      ref,
+      {
+        updatedAt: serverTimestamp(),
+        [`sides.${user.uid}`]: {
+          items: next.items ?? mySide.items ?? [],
+          offerRC: next.offerRC ?? mySide.offerRC ?? 0,
+          accepted: next.accepted ?? false,
+        },
+      },
+      { merge: true },
+    );
+  };
+
+  const canFinalize = Boolean(other) && mySide.accepted && theirSide.accepted && trade?.status !== "finalized";
+
+  const finalize = async () => {
+    if (!user || !trade || !canFinalize) return;
+    // Create a system thread message for both users
+    const text = `ÉCHANGE FINALISÉ\nMoi: ${mine.map((i) => i.title).join(", ")} + ${mySide.offerRC || 0} RC\nToi: ${theirs.map((i) => i.title).join(", ")} + ${theirSide.offerRC || 0} RC`;
+    const tRef = await addDoc(collection(db, "threads"), {
+      participants: trade.participants,
+      title: "Échange",
+      updatedAt: serverTimestamp(),
+      lastMessage: { text, senderId: "system" },
+    });
+    await addDoc(collection(db, "threads", tRef.id, "messages"), {
       senderId: "system",
       text,
       createdAt: serverTimestamp(),
     });
-    await setDoc(
-      doc(db, "threads", docRef.id),
-      { lastMessage: { text, senderId: "system" }, updatedAt: serverTimestamp() },
-      { merge: true },
-    );
-    nav(`/messages?thread=${docRef.id}`);
+    await updateDoc(doc(db, "trades", trade.id), { status: "finalized", updatedAt: serverTimestamp() });
+    nav(`/messages?thread=${tRef.id}`);
   };
 
   return (
     <div className="container py-10">
       <h1 className="font-display text-2xl font-bold">Échanges</h1>
-      <p className="text-sm text-foreground/70">
-        Proposez un échange en glissant des objets de la galerie vers chaque
-        colonne, puis partagez ou acceptez.
-      </p>
+      {!tradeId ? (
+        <>
+          <p className="text-sm text-foreground/70">Invitez d'abord une personne pour commencer un échange.</p>
+          <div className="mt-4 flex gap-3">
+            <Button onClick={createInvite}>Créer une invitation</Button>
+          </div>
+        </>
+      ) : !trade ? (
+        <p className="text-sm text-foreground/70">Chargement…</p>
+      ) : (
+        <>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-foreground/70">
+            <span>Invitation: {trade.id}</span>
+            <Button size="sm" variant="outline" onClick={copyInvite}>Copier le lien</Button>
+            <span className="opacity-70">•</span>
+            <span>Participants: {(trade.participants || []).length}/2</span>
+            {trade.status === "finalized" && (
+              <span className="text-emerald-400 font-semibold">Finalisé</span>
+            )}
+          </div>
 
-      <div className="mt-4 flex items-center gap-3">
-        <Input
-          placeholder="Email de l'autre utilisateur"
-          value={partnerEmail}
-          onChange={(e) => setPartnerEmail(e.target.value)}
-          className="w-72"
-        />
-      </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <DropZone
+              title="Vos objets"
+              items={mine}
+              droppable={true}
+              onDropItem={(it) => {
+                const ids = mySide.items || [];
+                if (!ids.includes(it.id)) updateMySide({ items: [...ids, it.id], accepted: false });
+              }}
+              onRemove={(id) => {
+                const ids = (mySide.items || []).filter((x: string) => x !== id);
+                updateMySide({ items: ids, accepted: false });
+              }}
+              offer={mySide.offerRC || 0}
+              onOfferChange={(n) => updateMySide({ offerRC: n, accepted: false })}
+            />
+            <DropZone
+              title="Objets de l'autre utilisateur"
+              items={theirs}
+              droppable={false}
+              onDropItem={() => {}}
+              onRemove={() => {}}
+            />
+          </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
-        <DropZone
-          title="Vos objets"
-          items={mine}
-          onDropItem={(it) =>
-            setMine((arr) => (arr.find((x) => x.id === it.id) ? arr : [...arr, it]))
-          }
-          onRemove={(id) => setMine((arr) => arr.filter((x) => x.id !== id))}
-        />
-        <DropZone
-          title="Objets de l'autre utilisateur"
-          items={theirs}
-          onDropItem={(it) =>
-            setTheirs((arr) => (arr.find((x) => x.id === it.id) ? arr : [...arr, it]))
-          }
-          onRemove={(id) => setTheirs((arr) => arr.filter((x) => x.id !== id))}
-        />
-      </div>
+          <div className="mt-4 flex flex-col sm:flex-row gap-3">
+            <Button variant="secondary" onClick={() => updateMySide({ accepted: true })} disabled={mySide.accepted}>
+              J'accepte ma partie
+            </Button>
+            <Button onClick={finalize} disabled={!canFinalize}>Finaliser l'échange</Button>
+            <Button variant="outline" onClick={() => updateMySide({ items: [], offerRC: 0, accepted: false })}>
+              Réinitialiser mes objets
+            </Button>
+          </div>
 
-      <div className="mt-4 flex flex-col sm:flex-row gap-3">
-        <Button
-          variant="secondary"
-          onClick={async () => {
-            try {
-              await navigator.clipboard.writeText(shareText);
-            } catch {}
-            await openThread(false);
-          }}
-        >
-          Partager l'offre
-        </Button>
-        <Button disabled={!canAccept} onClick={() => openThread(true)}>Accepter l'échange</Button>
-        <Button variant="outline" onClick={() => { setMine([]); setTheirs([]); }}>
-          Réinitialiser
-        </Button>
-      </div>
-
-      <div className="mt-8">
-        <h2 className="font-semibold mb-2">Galerie d'objets (démo)</h2>
-        <Gallery onPick={(it) => setMine((a) => (a.find((x) => x.id === it.id) ? a : [...a, it]))} />
-      </div>
+          <div className="mt-8">
+            <h2 className="font-semibold mb-2">Galerie d'objets (démo)</h2>
+            <Gallery onPick={(it) => {
+              const ids = mySide.items || [];
+              if (!ids.includes(it.id)) updateMySide({ items: [...ids, it.id], accepted: false });
+            }} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

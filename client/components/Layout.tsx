@@ -560,7 +560,7 @@ function Footer() {
             </li>
             <li>
               <Link className="hover:text-foreground" to="/">
-                Conditions & l��gales
+                Conditions & légales
               </Link>
             </li>
           </ul>
@@ -642,7 +642,24 @@ export default function Layout() {
     fetch("/api/process-pending", { method: "POST" }).catch(() => {});
 
     // Global error listeners to help debug 'Script error.' and uncaught rejections
+    const shouldIgnore = (msg: string) => {
+      if (!msg) return false;
+      const m = msg.toLowerCase();
+      return (
+        m.includes("iframe evaluation timeout") ||
+        m.includes("failed to read the 'cookie' property") ||
+        m.includes("could not get cookie") ||
+        m.includes("fullstory namespace conflict")
+      );
+    };
+
     const onError = (event: ErrorEvent) => {
+      const msg = String(event.message || "");
+      if (shouldIgnore(msg)) {
+        // eslint-disable-next-line no-console
+        console.warn("Ignored iframe/cookie error:", msg);
+        return;
+      }
       // eslint-disable-next-line no-console
       console.error(
         "Global error captured:",
@@ -654,6 +671,13 @@ export default function Layout() {
       );
     };
     const onRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      const msg = String(reason?.message || reason || "");
+      if (shouldIgnore(msg)) {
+        // eslint-disable-next-line no-console
+        console.warn("Ignored iframe/cookie unhandled rejection:", msg);
+        return;
+      }
       // eslint-disable-next-line no-console
       console.error("Unhandled promise rejection:", event.reason);
     };
